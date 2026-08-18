@@ -1,49 +1,198 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="theme-color" content="#0b4da2">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Gestor de Licitaciones | Grupo UPS</title>
-<style>
-:root{--b:#0b4da2;--n:#062d5b;--bg:#f4f7fb;--tx:#243247;--m:#667085;--bd:#dbe3ed;--ok:#087a4b;--okb:#e9f8f0;--w:#b54708;--wb:#fff5e8;--r:#b42318;--rb:#fff0ee;--p:#6941c6;--pb:#f1efff;--sh:0 15px 38px rgba(20,38,70,.10)}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--tx)}button,input{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{min-height:100vh;display:grid;grid-template-columns:245px 1fr}.side{background:linear-gradient(180deg,#082f61,#061b39);color:#fff;padding:18px 15px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:30}.brand{padding:4px 6px 18px;border-bottom:1px solid rgba(255,255,255,.14)}.logo{width:190px;max-width:100%;display:block;background:#fff;border-radius:9px}.brand small{display:block;color:#bdd0e7;margin-top:7px}.menu{display:grid;gap:7px;padding-top:16px}.nav{border:0;background:transparent;color:#eaf1fb;padding:12px;border-radius:10px;text-align:left;font-weight:800}.nav:hover,.nav.active{background:var(--b)}.author{margin-top:auto;border-top:1px solid rgba(255,255,255,.14);padding:14px 6px 0;font-size:11px;color:#c5d6e9;line-height:1.5}.author strong{color:#fff}.main{min-width:0}.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--bd);padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}.top h1{margin:0;color:var(--n);font-size:20px}.top p{margin:3px 0 0;color:var(--m);font-size:11px}.mobile{display:none;border:1px solid var(--bd);background:#fff;border-radius:9px;padding:8px 10px}.pill{border:1px solid #d6e4f5;background:#f3f7fc;color:var(--b);border-radius:999px;padding:6px 9px;font-size:10px;font-weight:900}.content{padding:22px;max-width:1500px;margin:auto}.page{display:none}.page.active{display:block}.hero,.panel,.metric,.card{background:#fff;border:1px solid var(--bd);border-radius:16px}.hero{padding:20px;box-shadow:var(--sh);display:flex;justify-content:space-between;align-items:center;gap:15px;background:linear-gradient(135deg,#fff,#f5f9ff)}.hero h2{margin:0;color:var(--n);font-size:24px}.hero p{margin:7px 0 0;color:var(--m);font-size:12px;line-height:1.5;max-width:900px}.btn{border:1px solid var(--bd);background:#fff;color:var(--n);font-weight:900;border-radius:9px;padding:9px 12px}.btn.primary{background:var(--b);border-color:var(--b);color:#fff}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px}.metric{padding:15px}.metric .lab{font-size:10px;color:var(--m);font-weight:900;text-transform:uppercase}.metric .val{font-size:24px;font-weight:950;color:var(--n);margin-top:6px}.metric .sub{font-size:10px;color:var(--m);margin-top:4px}.metric.critical{border-color:#efb6b1;background:#fff8f7}.metric.critical .val{color:var(--r)}.grid2{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);gap:16px;margin-top:16px}.panel{padding:18px}.head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:13px}.head h3{margin:0;color:var(--n);font-size:17px}.head p{margin:4px 0 0;color:var(--m);font-size:11px}.status{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:950;white-space:nowrap}.ok{background:var(--okb);color:var(--ok)}.warn{background:var(--wb);color:var(--w)}.bad{background:var(--rb);color:var(--r)}.purple{background:var(--pb);color:var(--p)}.neutral{background:#f2f4f7;color:#475467}.progresswrap{height:9px;background:#e9edf3;border-radius:999px;overflow:hidden}.progress{height:100%;background:var(--b);transition:.2s}.tablewrap{overflow:auto;margin-top:12px}.req{width:100%;border-collapse:collapse;min-width:980px}.req th{font-size:9px;color:var(--m);text-align:left;padding:9px 7px;border-bottom:1px solid var(--bd);text-transform:uppercase}.req td{padding:10px 7px;border-bottom:1px solid #eef1f5;font-size:11px;vertical-align:middle}.critical-row{background:#fff8f7}.critical-row td:first-child{border-left:4px solid #d92d20}.rname{font-weight:900;color:#26364e}.meta{font-size:9px;color:var(--m);margin-top:3px}.critical-note{display:inline-flex;margin-top:5px;background:var(--rb);color:var(--r);border:1px solid #f1c5c1;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:950}.actions{display:flex;gap:5px;flex-wrap:wrap}.tiny{border:1px solid var(--bd);background:#fff;color:var(--n);font-weight:850;border-radius:7px;padding:5px 7px;font-size:9px}.file input{display:none}.alert{border:1px solid var(--bd);border-radius:11px;padding:11px;margin-top:8px}.alert strong{display:block;color:var(--n);font-size:11px}.alert span{display:block;color:var(--m);font-size:10px;margin-top:3px;line-height:1.4}.alert.red{border-color:#efb6b1;background:#fff8f7}.alert.red strong{color:var(--r)}.alert.red span{color:#7a271a}.deadline{background:var(--rb);border:1px solid #f2c8c4;border-radius:12px;padding:14px}.deadline strong{font-size:21px;color:var(--r)}.deadline span{display:block;color:#7b332e;font-size:10px;margin-top:4px}.ready{margin-top:12px;border:1px solid #b8e7ce;background:var(--okb);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center}.check{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff;font-weight:950}.ready b{color:#075c39}.ready span{display:block;color:#3f6e58;font-size:10px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.card{padding:14px}.card h4{margin:0;color:var(--n)}.card p{font-size:10px;color:var(--m);margin:5px 0}.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}.summarygrid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-top:16px}.info{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.ibox{border:1px solid var(--bd);border-radius:11px;padding:11px}.ibox .k{font-size:9px;text-transform:uppercase;color:var(--m);font-weight:900}.ibox .v{font-size:12px;color:var(--n);font-weight:850;margin-top:4px;line-height:1.35}.offers{display:grid;gap:8px}.offer{border:1px solid var(--bd);border-radius:11px;padding:11px;display:flex;justify-content:space-between;gap:10px}.offer.ours{background:#f6faff;border-color:#91b7e6}.offer strong{font-size:11px;color:var(--n)}.offer span{display:block;color:var(--m);font-size:9px;margin-top:3px}.ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ok) 0 74%,#e7ebf0 74%);position:relative;margin:12px auto}.ring:after{content:"";width:112px;height:112px;background:#fff;border-radius:50%;position:absolute}.ringtext{position:relative;z-index:1;text-align:center}.ringtext strong{font-size:27px;color:var(--n)}.ringtext span{display:block;color:var(--ok);font-size:10px;font-weight:900}.note{border:1px solid var(--bd);background:#f8fafc;border-radius:10px;padding:10px;color:var(--m);font-size:10px;line-height:1.45}.sig{border:1px solid var(--bd);border-radius:11px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:8px}.sig strong{color:var(--n);font-size:11px}.sig p{margin:3px 0 0;color:var(--m);font-size:10px}.foot{text-align:center;color:var(--m);font-size:10px;padding:18px 12px 26px}.foot strong{color:var(--n)}.modal{position:fixed;inset:0;background:rgba(10,31,61,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:14px}.modal.open{display:flex}.modalbox{background:#fff;width:min(650px,100%);border-radius:16px;padding:18px}.quote{margin-top:12px;border-left:4px solid var(--b);background:#f7f9fc;padding:12px;border-radius:7px;font-size:11px;line-height:1.55}.upload{border:2px dashed #a9c5e8;background:#f8fbff;border-radius:14px;padding:25px;text-align:center}.upload input{display:none}.analysis{background:#eef4fb;border:1px solid #d5e5f7;color:var(--n);padding:12px;border-radius:10px;margin-top:12px;font-size:11px;line-height:1.5}.overlay{display:none}
-@media(max-width:1100px){.metrics{grid-template-columns:repeat(3,1fr)}.grid2,.summarygrid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:820px){.app{grid-template-columns:1fr}.side{position:fixed;left:-265px;width:245px;transition:.2s}.side.open{left:0}.overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:25}.mobile{display:block}.top{padding:12px 14px}.content{padding:14px}.hero{flex-direction:column;align-items:flex-start}.metrics{grid-template-columns:repeat(2,1fr)}.cards,.info{grid-template-columns:1fr}}
-</style>
-</head><body>
-<div class="overlay" id="overlay"></div><div class="app"><aside class="side" id="side"><div class="brand"><img class="logo" src="favicon.png" alt="Grupo UPS"><small>Gestión de Licitaciones</small></div><nav class="menu"><button class="nav active" data-page="dashboard">⌂ Dashboard</button><button class="nav" data-page="resumen">★ Resumen Ejecutivo</button><button class="nav" data-page="nueva">＋ Nueva licitación</button><button class="nav" data-page="licitaciones">▣ Licitaciones</button><button class="nav" data-page="empresa">▤ Documentos Empresa</button><button class="nav" data-page="firmas">✎ Firmas</button><button class="nav" data-page="competencia">◉ Competencia</button></nav><div class="author">Preparado por:<br><strong>Yorlenis Londoño</strong><br>Asistente de Ventas</div></aside>
-<main class="main"><header class="top"><div style="display:flex;gap:10px;align-items:center"><button class="mobile" id="menu">☰</button><div><h1 id="title">Dashboard de Licitaciones</h1><p>Grupo UPS · Control documental, alertas y seguimiento</p></div></div><span class="pill">PC · Tablet · Móvil</span></header><div class="content">
-<section id="dashboard" class="page active"><div class="hero"><div><h2>Gestor Inteligente de Licitaciones</h2><p>Controla documentos, firmas, subsanabilidad, vencimientos y competencia desde un solo lugar.</p></div><button class="btn primary" data-go="nueva">＋ Cargar pliego</button></div><div class="metrics"><div class="metric"><div class="lab">Activas</div><div class="val">3</div><div class="sub">Licitaciones</div></div><div class="metric"><div class="lab">Pendientes</div><div class="val" id="pending">5</div><div class="sub">Documentos</div></div><div class="metric critical"><div class="lab">No subsanables</div><div class="val" id="criticalCount">2</div><div class="sub">Revisión especial</div></div><div class="metric"><div class="lab">Próximo cierre</div><div class="val" style="font-size:18px;color:var(--r)">30 JUL</div><div class="sub">10:00 a. m.</div></div><div class="metric"><div class="lab">Probabilidad estimada</div><div class="val" id="scoreTop">74%</div><div class="sub">Índice interno</div></div></div>
-<div class="grid2"><div class="panel"><div class="head"><div><h3>Requisitos detectados</h3><p>Los NO SUBSANABLES aparecen resaltados para revisarlos con mayor cuidado.</p></div><span class="status warn" id="global">EN PREPARACIÓN</span></div><div class="progresswrap"><div class="progress" id="bar"></div></div><div class="tablewrap"><table class="req"><thead><tr><th>Requisito</th><th>Subsanabilidad</th><th>Estado</th><th>Firma</th><th>Acción</th></tr></thead><tbody id="rows"></tbody></table></div><div class="ready hidden" id="ready"><div class="check">✓</div><div><b>LICITACIÓN LISTA</b><span>Todos los documentos y firmas obligatorias están completos.</span></div></div></div><div><div class="panel"><div class="head"><div><h3>Fecha límite</h3><p>Alertas críticas antes del cierre.</p></div><span class="status bad">CRÍTICO</span></div><div class="deadline"><strong>30 julio 2026</strong><span>10:00 a. m. · Presentación física</span></div><div class="alert red"><strong>⚠ Requisitos NO SUBSANABLES</strong><span>Si falta uno de estos documentos, debe revisarse de inmediato porque puede comprometer la oferta.</span></div><div class="alert"><strong>✍ Firmas pendientes</strong><span id="sigPending"></span></div><div class="alert"><strong>🔔 Recordatorio</strong><span>Revisión completa un día antes del cierre.</span></div></div></div></div></section>
-<section id="resumen" class="page"><div class="hero"><div><h2>Resumen Ejecutivo para Ingeniería</h2><p>Una vista corta con lo más importante de la licitación, sin necesidad de revisar todo el expediente.</p></div><span class="status purple">RESUMEN GERENCIAL</span></div><div class="summarygrid"><div class="panel"><div class="head"><div><h3>Información de la licitación</h3><p>Datos principales del proceso.</p></div></div><div class="info"><div class="ibox"><div class="k">Nombre / proceso</div><div class="v">SDO-LPI-002-2025</div></div><div class="ibox"><div class="k">Entidad</div><div class="v">Órgano Judicial</div></div><div class="ibox" style="grid-column:1/-1"><div class="k">¿De qué trata?</div><div class="v">Expansión y Fortalecimiento de Infraestructura de Respaldo y Servidores del Data Center.</div></div><div class="ibox"><div class="k">Monto de referencia</div><div class="v">US$5,075,000.00</div></div><div class="ibox"><div class="k">Fecha de cierre</div><div class="v">30/07/2026 · 10:00 a. m.</div></div><div class="ibox"><div class="k">Nuestra oferta</div><div class="v" id="ourOffer">US$4,720,000</div></div><div class="ibox"><div class="k">Posición por precio</div><div class="v" id="ourRank">2 de 4</div></div></div><div class="alert red"><strong>⚠ Punto delicado</strong><span id="criticalSummary">Hay 2 requisitos marcados como NO SUBSANABLES. Deben revisarse antes de presentar.</span></div></div><div class="panel"><div class="head"><div><h3>Probabilidad estimada</h3><p>Indicador interno, no garantía de adjudicación.</p></div></div><div class="ring" id="ringExec"><div class="ringtext"><strong id="scoreExec">74%</strong><span id="scoreExecLabel">ALTA</span></div></div><div class="note">Se calcula con cumplimiento documental, técnico, experiencia y posición relativa de precio.</div></div></div><div class="panel" style="margin-top:16px"><div class="head"><div><h3>Quiénes participaron y cuánto ofertaron</h3><p>Resumen posterior al cierre.</p></div></div><div class="offers" id="execOffers"></div></div></section>
-<section id="nueva" class="page"><div class="hero"><div><h2>Nueva licitación</h2><p>Adjunta el PDF del pliego. Esta demo simula el análisis automático.</p></div></div><div class="panel" style="margin-top:16px"><label class="upload" for="pdf"><div style="font-size:30px">📄</div><h3>Adjuntar pliego de cargos</h3><p>Selecciona un PDF desde computadora, teléfono o tablet</p><input id="pdf" type="file" accept="application/pdf"></label><div class="analysis hidden" id="analysis"></div><div style="text-align:right;margin-top:12px"><button class="btn primary" id="analyze">Analizar pliego</button></div></div></section>
-<section id="licitaciones" class="page"><div class="hero"><div><h2>Licitaciones</h2><p>Oportunidades activas, listas y en evaluación.</p></div></div><div class="cards"><div class="card"><h4>SDO-LPI-002-2025</h4><p>Órgano Judicial</p><p>Data Center · Infraestructura de respaldo</p><div class="row"><span class="status warn">EN PREPARACIÓN</span><button class="tiny" data-go="dashboard">Abrir</button></div></div><div class="card"><h4>LC-01181-2026</h4><p>UPS 3 kVA</p><p>Suministro de equipos</p><div class="row"><span class="status ok">LISTA</span><button class="tiny">Abrir</button></div></div><div class="card"><h4>2026-34-UPS</h4><p>Mantenimiento preventivo</p><p>Servicio técnico</p><div class="row"><span class="status purple">EVALUACIÓN</span><button class="tiny">Abrir</button></div></div></div></section>
-<section id="empresa" class="page"><div class="hero"><div><h2>Documentos Empresa</h2><p>Biblioteca reutilizable con control de renovación y vigencia.</p></div></div><div class="cards"><div class="card"><h4>Registro Público</h4><p>Renovación: cada 3 meses</p><p>Vence: 02/10/2026</p><span class="status ok">VIGENTE</span></div><div class="card"><h4>Paz y Salvo DGI</h4><p>Renovación periódica</p><p>Vence: 31/08/2026</p><span class="status warn">POR RENOVAR</span></div><div class="card"><h4>Paz y Salvo CSS</h4><p>Renovación periódica</p><p>Vence: 20/10/2026</p><span class="status ok">VIGENTE</span></div></div></section>
-<section id="firmas" class="page"><div class="hero"><div><h2>Firmas requeridas</h2><p>Quién debe firmar y dónde lo pide el pliego.</p></div></div><div class="panel" style="margin-top:16px" id="sigList"></div></section>
-<section id="competencia" class="page"><div class="hero"><div><h2>Competencia</h2><p>Participantes, ofertas y posición de Grupo UPS.</p></div><button class="btn primary" id="simulate">Simular datos post-cierre</button></div><div class="summarygrid"><div class="panel"><div class="head"><div><h3>Ofertas detectadas</h3><p id="monitor">Esperando información posterior al cierre.</p></div></div><div class="offers" id="offers"></div></div><div class="panel"><div class="head"><div><h3>Índice competitivo</h3><p>Estimación interna.</p></div></div><div class="ring" id="ring"><div class="ringtext"><strong id="score">74%</strong><span id="scoreLabel">ALTA</span></div></div><div class="note">La evaluación oficial siempre prevalece.</div></div></div></section>
-</div><footer class="foot"><strong>Preparado por: Yorlenis Londoño | Asistente de Ventas</strong><br>Gestor de Licitaciones · Grupo UPS</footer></main></div>
-<div class="modal" id="modal"><div class="modalbox"><h3 id="mTitle"></h3><p id="mMeta" style="color:var(--m);font-size:10px"></p><div class="quote" id="mQuote"></div><div style="text-align:right;margin-top:12px"><button class="btn" id="close">Cerrar</button></div></div></div>
+</head>
+<body>
 <script>
-const reqs=[
-{name:'Registro Público vigente',sub:'Subsanable',done:true,sign:'No requiere',sig:true,page:'47',quote:'Documentación legal vigente del oferente.'},
-{name:'Cédula del representante legal',sub:'Subsanable',done:true,sign:'No requiere',sig:true,page:'47',quote:'Copia de identificación del representante legal o autorizado.'},
-{name:'Referencias bancarias',sub:'Subsanable',done:false,sign:'Banco autorizado',sig:false,page:'47 y 57',quote:'Carta bancaria conforme a las condiciones indicadas en el pliego.'},
-{name:'Experiencia proyecto mínimo US$1.5M',sub:'Subsanable',done:true,sign:'Según evidencia',sig:true,page:'47 y 57',quote:'Experiencia comprobada en proyecto similar.'},
-{name:'CV Administrador de Proyecto',sub:'Subsanable',done:false,sign:'Profesional + oferente',sig:false,page:'58 y 125',quote:'El CV debe completarse y firmarse según el pliego.'},
-{name:'CV técnicos certificados',sub:'Subsanable',done:false,sign:'Profesional + oferente',sig:false,page:'58 y 125',quote:'Los profesionales deben acreditar experiencia y certificaciones.'},
-{name:'Certificación Tier II TCDD',sub:'Subsanable',done:true,sign:'No requiere',sig:true,page:'47 y 57',quote:'Certificación vigente Tier II TCDD o equivalente.'},
-{name:'Certificación ISO 27001',sub:'Subsanable',done:true,sign:'No requiere',sig:true,page:'48 y 57',quote:'Certificación ISO 27001 vigente.'},
-{name:'Declaración de Mantenimiento de Oferta',sub:'No subsanable',done:false,sign:'Persona autorizada',sig:false,page:'73–76',quote:'La ausencia o incumplimiento puede ser causal de rechazo según el pliego.'},
-{name:'Carta de Oferta',sub:'Subsanable',done:true,sign:'Representante legal / autorizado',sig:true,page:'60–65',quote:'Carta de Oferta firmada por persona debidamente autorizada.'},
-{name:'Autorización del Fabricante',sub:'Subsanable',done:false,sign:'Fabricante autorizado',sig:false,page:'75–77',quote:'Autorización en papel membretado y firmada por persona autorizada.'},
-{name:'Listas de Precios / Servicios Conexos',sub:'No subsanable',done:true,sign:'Oferente autorizado',sig:true,page:'68–72',quote:'Los precios y aspectos económicos requieren revisión especial; no deben alterarse sustancialmente.'}
-];
-const comps=[['Grupo UPS, S.A.',4720000,true],['Empresa Alpha',4890000,false],['Empresa Beta',5010000,false],['Empresa Gamma',4650000,false]];let score=74;
-const titles={dashboard:'Dashboard de Licitaciones',resumen:'Resumen Ejecutivo',nueva:'Nueva licitación',licitaciones:'Licitaciones',empresa:'Documentos Empresa',firmas:'Firmas requeridas',competencia:'Competencia'};
-function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page===p));document.getElementById('title').textContent=titles[p]||'Gestor';document.getElementById('side').classList.remove('open');document.getElementById('overlay').classList.remove('show');scrollTo(0,0)}document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));document.getElementById('menu').onclick=()=>{document.getElementById('side').classList.toggle('open');document.getElementById('overlay').classList.toggle('show')};document.getElementById('overlay').onclick=()=>{document.getElementById('side').classList.remove('open');document.getElementById('overlay').classList.remove('show')};
-function source(r){mTitle.textContent=r.name;mMeta.textContent='Página '+r.page;mQuote.textContent=r.quote;modal.classList.add('open')}close.onclick=()=>modal.classList.remove('open');modal.onclick=e=>{if(e.target===modal)modal.classList.remove('open')};
-function render(){rows.innerHTML='';reqs.forEach((r,i)=>{let no=r.sub==='No subsanable',tr=document.createElement('tr');if(no)tr.className='critical-row';let sig=r.sign==='No requiere'?'<span class="status ok">NO</span>':`<span class="status ${r.sig?'ok':'bad'}">${r.sig?'FIRMA LISTA':'FALTA FIRMA'}</span><div class="meta">${r.sign}</div>`;tr.innerHTML=`<td><div class="rname">${r.name}</div><div class="meta">Pág. ${r.page}</div>${no?'<div class="critical-note">⚠ REVISAR CON MUCHO CUIDADO</div>':''}</td><td><span class="status ${no?'bad':'ok'}">${no?'⚠ NO SUBSANABLE':'SUBSANABLE'}</span>${no?'<div class="meta" style="color:var(--r);font-weight:800">Puede comprometer la oferta.</div>':''}</td><td><span class="status ${r.done?'ok':'warn'}">${r.done?'ADJUNTADO':'PENDIENTE'}</span></td><td>${sig}</td><td><div class="actions"><button class="tiny src" data-i="${i}">Ir al pliego</button><label class="tiny file">${r.done?'Reemplazar':'Adjuntar'}<input type="file" data-f="${i}"></label>${r.sign!=='No requiere'?`<button class="tiny sigbtn" data-s="${i}">${r.sig?'Quitar firma':'Marcar firma'}</button>`:''}</div></td>`;rows.appendChild(tr)});document.querySelectorAll('.src').forEach(b=>b.onclick=()=>source(reqs[+b.dataset.i]));document.querySelectorAll('[data-f]').forEach(f=>f.onchange=()=>{if(f.files[0]){reqs[+f.dataset.f].done=true;render();renderSigs()}});document.querySelectorAll('.sigbtn').forEach(b=>b.onclick=()=>{reqs[+b.dataset.s].sig=!reqs[+b.dataset.s].sig;render();renderSigs()});update()}
-function update(){let done=reqs.filter(r=>r.done).length,sp=reqs.filter(r=>r.sign!=='No requiere'&&!r.sig).length,crit=reqs.filter(r=>r.sub==='No subsanable').length,pct=Math.round(done/reqs.length*100),ready=done===reqs.length&&sp===0;bar.style.width=pct+'%';pending.textContent=reqs.length-done;criticalCount.textContent=crit;sigPending.textContent=sp+' documento'+(sp===1?'':'s')+' necesita'+(sp===1?'':'n')+' firma.';global.className='status '+(ready?'ok':'warn');global.textContent=ready?'LICITACIÓN LISTA':pct+'% COMPLETO';document.getElementById('ready').classList.toggle('hidden',!ready);criticalSummary.textContent='Hay '+crit+' requisitos marcados como NO SUBSANABLES. Deben revisarse antes de presentar.'}
-function renderSigs(){sigList.innerHTML='';reqs.filter(r=>r.sign!=='No requiere').forEach(r=>{let d=document.createElement('div');d.className='sig';d.innerHTML=`<div><strong>${r.name}</strong><p>Debe firmar: ${r.sign} · Página ${r.page}</p></div><span class="status ${r.sig?'ok':'bad'}">${r.sig?'FIRMA LISTA':'PENDIENTE'}</span>`;sigList.appendChild(d)})}
-function offers(target){let b=document.getElementById(target);b.innerHTML='';let sorted=comps.slice().sort((a,b)=>a[1]-b[1]);sorted.forEach((o,i)=>{let d=document.createElement('div');d.className='offer '+(o[2]?'ours':'');d.innerHTML=`<div><strong>${o[0]}</strong><span>${o[2]?'Nuestra oferta':'Oferente detectado'} · posición ${i+1}</span></div><strong>US$${o[1].toLocaleString('en-US')}</strong>`;b.appendChild(d)});let our=comps.find(x=>x[2]),rank=sorted.findIndex(x=>x[2])+1;ourOffer.textContent='US$'+our[1].toLocaleString('en-US');ourRank.textContent=rank+' de '+sorted.length}
-function setScore(s){score=s;scoreTop.textContent=s+'%';score.textContent=s+'%';scoreExec.textContent=s+'%';scoreLabel.textContent=s>=75?'ALTA':s>=55?'MEDIA':'BAJA';scoreExecLabel.textContent=scoreLabel.textContent;ring.style.background=`conic-gradient(var(--ok) 0 ${s}%,#e7ebf0 ${s}% 100%)`;ringExec.style.background=ring.style.background}
-simulate.onclick=()=>{monitor.textContent='4 oferentes detectados en la simulación posterior al cierre.';offers('offers');offers('execOffers');setScore(74)};analyze.onclick=()=>{analysis.classList.remove('hidden');analysis.innerHTML=pdf.files[0]?'<strong>✓ '+pdf.files[0].name+'</strong><br>Demo: requisitos, subsanabilidad, firmas y fechas detectados.':'Selecciona primero un PDF.'};render();renderSigs();offers('offers');offers('execOffers');setScore(74);
-</script></body></html>
+(async function(){
+  try{
+    let src = await fetch('licitaciones.html?base=' + Date.now(), {cache:'no-store'}).then(r=>{
+      if(!r.ok) throw new Error('No se pudo cargar el diseño base');
+      return r.text();
+    });
+
+    /* 1) Conserva exactamente el diseño anterior y solo agrega estilos mínimos. */
+    src = src.replace('</style>', `
+      .critical-row{background:#fff8f7!important}
+      .critical-row td:first-child{border-left:4px solid #d92d20}
+      .critical-note{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:5px 7px;border:1px solid #f2b8b2;border-radius:7px;background:#fff0ee;color:#b42318;font-size:9px;font-weight:950}
+      .sub-badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:950;white-space:nowrap}
+      .sub-yes{background:#e9f8f0;color:#087a4b}
+      .sub-no{background:#fff0ee;color:#b42318;border:1px solid #f2b8b2}
+      .exec-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:17px;margin-top:17px}
+      .exec-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+      .exec-box{border:1px solid var(--border);border-radius:12px;padding:13px;background:#fff}
+      .exec-key{font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+      .exec-val{margin-top:5px;color:var(--blue-dark);font-weight:850;font-size:13px;line-height:1.4}
+      .exec-offers{display:grid;gap:8px;margin-top:10px}
+      .exec-offer{border:1px solid var(--border);border-radius:11px;padding:11px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+      .exec-offer.ours{background:#f6faff;border-color:#91b7e6}
+      .exec-offer strong{color:var(--blue-dark);font-size:12px}
+      .exec-offer span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+      .exec-score{display:grid;place-items:center;padding-top:6px}
+      .exec-ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--ok) 0 74%,#e7ebf0 74%);position:relative}
+      .exec-ring:after{content:"";width:112px;height:112px;border-radius:50%;background:#fff;position:absolute}
+      .exec-ringtext{position:relative;z-index:1;text-align:center}
+      .exec-ringtext strong{font-size:28px;color:var(--blue-dark)}
+      .exec-ringtext span{display:block;color:var(--ok);font-size:11px;font-weight:900}
+      @media(max-width:1050px){.exec-grid{grid-template-columns:1fr}}
+      @media(max-width:700px){.exec-info{grid-template-columns:1fr}.exec-offer{flex-direction:column;align-items:flex-start}}
+    </style>`, 1);
+
+    /* 2) Solo se agrega una opción al menú lateral, sin cambiar el resto. */
+    src = src.replace(
+      '<button class="nav active" data-page="dashboard">⌂ Dashboard</button>',
+      '<button class="nav active" data-page="dashboard">⌂ Dashboard</button>\n<button class="nav" data-page="resumen">★ Resumen Ejecutivo</button>'
+    );
+
+    /* 3) Resumen ejecutivo para el Ing., usando las mismas tarjetas y estilo del modelo anterior. */
+    const resumen = `
+<section class="page" id="resumen">
+  <div class="hero">
+    <div>
+      <h2>Resumen Ejecutivo de la Licitación</h2>
+      <p>Vista rápida con los datos más importantes para Ingeniería y Gerencia.</p>
+    </div>
+    <span class="pill">Vista ejecutiva</span>
+  </div>
+
+  <div class="exec-grid">
+    <div class="panel">
+      <div class="head">
+        <div><h3>Información principal</h3><p>Qué se está licitando y datos clave del proceso.</p></div>
+        <span class="status purple">SDO-LPI-002-2025</span>
+      </div>
+      <div class="exec-info">
+        <div class="exec-box"><div class="exec-key">Nombre / proceso</div><div class="exec-val">SDO-LPI-002-2025</div></div>
+        <div class="exec-box"><div class="exec-key">Entidad</div><div class="exec-val">Órgano Judicial</div></div>
+        <div class="exec-box" style="grid-column:1/-1"><div class="exec-key">¿De qué trata la licitación?</div><div class="exec-val">Expansión y Fortalecimiento de Infraestructura de Respaldo y Servidores del Data Center.</div></div>
+        <div class="exec-box"><div class="exec-key">Monto de referencia</div><div class="exec-val">US$5,075,000.00</div></div>
+        <div class="exec-box"><div class="exec-key">Fecha de cierre</div><div class="exec-val">30/07/2026 · 10:00 a. m.</div></div>
+        <div class="exec-box"><div class="exec-key">Nuestra oferta</div><div class="exec-val">US$4,720,000</div></div>
+        <div class="exec-box"><div class="exec-key">Posición por precio</div><div class="exec-val">2 de 4</div></div>
+      </div>
+      <div class="alert" style="margin-top:12px;border-color:#f2b8b2;background:#fff8f7">
+        <strong style="color:#b42318">⚠ Atención especial</strong>
+        <span style="color:#7a271a">Hay requisitos NO SUBSANABLES. Deben revisarse con mayor cuidado antes de presentar la oferta.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><div><h3>Probabilidad estimada</h3><p>Índice interno de competitividad.</p></div></div>
+      <div class="exec-score">
+        <div class="exec-ring" id="execRing"><div class="exec-ringtext"><strong id="execScore">74%</strong><span id="execScoreLabel">ALTA</span></div></div>
+      </div>
+      <div class="note">Este porcentaje es una estimación interna; no garantiza la adjudicación.</div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:17px">
+    <div class="head"><div><h3>Participantes y ofertas</h3><p>Comparación rápida posterior al cierre.</p></div><span class="status ok">4 OFERENTES</span></div>
+    <div class="exec-offers">
+      <div class="exec-offer"><div><strong>Empresa Gamma</strong><span>Oferta detectada · posición 1</span></div><strong>US$4,650,000</strong></div>
+      <div class="exec-offer ours"><div><strong>Grupo UPS, S.A.</strong><span>Nuestra oferta · posición 2</span></div><strong>US$4,720,000</strong></div>
+      <div class="exec-offer"><div><strong>Empresa Alpha</strong><span>Oferta detectada · posición 3</span></div><strong>US$4,890,000</strong></div>
+      <div class="exec-offer"><div><strong>Empresa Beta</strong><span>Oferta detectada · posición 4</span></div><strong>US$5,010,000</strong></div>
+    </div>
+  </div>
+</section>`;
+    src = src.replace('<section class="page" id="nueva">', resumen + '\n<section class="page" id="nueva">');
+
+    /* 4) Mantiene el sistema de navegación original y solo reconoce el resumen. */
+    src = src.replace(
+      "const titles={dashboard:'Dashboard de Licitaciones',nueva:",
+      "const titles={dashboard:'Dashboard de Licitaciones',resumen:'Resumen Ejecutivo',nueva:"
+    );
+
+    /* 5) Agrega la columna Subsanabilidad sin tocar la lógica original de adjuntos ni firmas. */
+    const mejoras = `
+<script>
+(function(){
+  const noSubsanables = new Set([
+    'Declaración de Mantenimiento de la Oferta',
+    'Listas de Precios / Servicios Conexos'
+  ]);
+
+  function aplicarSubsanabilidad(){
+    const tabla = document.querySelector('.req');
+    const body = document.getElementById('rows');
+    if(!tabla || !body) return;
+
+    const headRow = tabla.querySelector('thead tr');
+    if(headRow && !headRow.querySelector('[data-sub-head]')){
+      const th = document.createElement('th');
+      th.textContent = 'Subsanabilidad';
+      th.setAttribute('data-sub-head','1');
+      headRow.insertBefore(th, headRow.children[1]);
+      tabla.style.minWidth = '930px';
+    }
+
+    [...body.querySelectorAll('tr')].forEach(tr=>{
+      if(tr.dataset.subDone) return;
+      const first = tr.querySelector('.rname');
+      if(!first) return;
+      const name = first.textContent.trim();
+      const critical = noSubsanables.has(name);
+      const td = document.createElement('td');
+      td.innerHTML = critical
+        ? '<span class="sub-badge sub-no">⚠ NO SUBSANABLE</span><div class="meta" style="color:#b42318;font-weight:800">Revisar con especial cuidado.</div>'
+        : '<span class="sub-badge sub-yes">SUBSANABLE</span>';
+      tr.insertBefore(td, tr.children[1]);
+      if(critical){
+        tr.classList.add('critical-row');
+        if(!tr.querySelector('.critical-note')){
+          first.parentElement.insertAdjacentHTML('beforeend','<div class="critical-note">⚠ REVISAR CON MUCHO CUIDADO</div>');
+        }
+      }
+      tr.dataset.subDone='1';
+    });
+  }
+
+  const body = document.getElementById('rows');
+  if(body){
+    new MutationObserver(aplicarSubsanabilidad).observe(body,{childList:true,subtree:true});
+  }
+  aplicarSubsanabilidad();
+
+  const alertas = document.querySelector('#dashboard .alerts');
+  if(alertas && !document.getElementById('subAlert')){
+    const a = document.createElement('div');
+    a.className='alert';
+    a.id='subAlert';
+    a.style.borderColor='#f2b8b2';
+    a.style.background='#fff8f7';
+    a.innerHTML='<strong style="color:#b42318">⚠ Documentos NO SUBSANABLES</strong><span style="color:#7a271a">Los marcados en rojo requieren una revisión más delicada antes de presentar la licitación.</span>';
+    alertas.insertBefore(a, alertas.children[1] || null);
+  }
+
+  function sincronizarScore(){
+    const original = document.getElementById('scoreTop');
+    const exec = document.getElementById('execScore');
+    const label = document.getElementById('execScoreLabel');
+    const ring = document.getElementById('execRing');
+    if(!original || !exec || !label || !ring) return;
+    const n = parseInt(original.textContent) || 74;
+    exec.textContent=n+'%';
+    label.textContent=n>=75?'ALTA':n>=55?'MEDIA':'BAJA';
+    ring.style.background='conic-gradient(var(--ok) 0 '+n+'%,#e7ebf0 '+n+'% 100%)';
+  }
+  sincronizarScore();
+  const originalScore=document.getElementById('scoreTop');
+  if(originalScore) new MutationObserver(sincronizarScore).observe(originalScore,{childList:true,characterData:true,subtree:true});
+})();
+<\/script>`;
+    src = src.replace('</body>', mejoras + '\n</body>');
+
+    document.open();
+    document.write(src);
+    document.close();
+  }catch(err){
+    document.body.innerHTML = '<div style="font-family:Arial;padding:40px"><h2>No se pudo cargar el Gestor de Licitaciones</h2><p>'+err.message+'</p></div>';
+  }
+})();
+</script>
+</body>
+</html>
