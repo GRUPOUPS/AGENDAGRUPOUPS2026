@@ -1,0 +1,31 @@
+name: Activar navegación licitaciones v8
+on:
+  push:
+    paths:
+      - '.github/workflows/activar-licitaciones-v8.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conectar navegación maestra
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('licitaciones-v2.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="licitaciones-v8.js?v=20260820-2"></script>'
+          if tag not in s:
+              s=s.replace('</body>',tag+'</body>')
+          p.write_text(s,encoding='utf-8')
+      - name: Guardar
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "Grupo UPS App Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -- licitaciones-v2.html
+          git commit -m "Estabilizar navegación del gestor de licitaciones"
+          git push
