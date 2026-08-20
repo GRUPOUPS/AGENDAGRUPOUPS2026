@@ -1,0 +1,46 @@
+(()=>{
+'use strict';
+const KEY='gups_economic_simple_v1';
+const fmt=n=>'B/. '+Number(n||0).toLocaleString('es-PA',{minimumFractionDigits:2,maximumFractionDigits:2});
+const round=n=>Math.round((Number(n||0)+Number.EPSILON)*100)/100;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function base(){return{tender:'utp',quoteTotal:0,tax:7,items:[],panamaComplete:false,finalChecked:false}}
+function load(){try{return Object.assign(base(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch{return base()}}
+let S=load();
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function calc(){const subtotal=round(S.items.reduce((a,x)=>a+Number(x.qty||0)*Number(x.unit||0),0));const taxAmount=round(subtotal*Number(S.tax||0)/100);const total=round(subtotal+taxAmount);const hasData=S.items.length>0&&S.items.every(x=>String(x.description||'').trim()&&Number(x.qty)>0&&Number(x.unit)>=0);const hasQuote=Number(S.quoteTotal)>0;const match=hasData&&hasQuote&&Math.abs(total-Number(S.quoteTotal))<0.01;return{subtotal,taxAmount,total,hasData,hasQuote,match,diff:round(total-Number(S.quoteTotal||0))}}
+function toast2(msg){try{if(typeof window.toast==='function')window.toast(msg);else console.log(msg)}catch{}}
+function ensureStyles(){if(document.getElementById('ecoSimpleStyles'))return;const st=document.createElement('style');st.id='ecoSimpleStyles';st.textContent=`
+.eco-simple-amount{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}.eco-simple-amount .field input{font-size:22px;font-weight:900;color:var(--navy);padding:13px}.eco-simple-note{border:1px solid #cfe0f2;background:#f8fbff;border-radius:13px;padding:11px 13px;color:#335779;font-size:9px;line-height:1.5}.eco-simple-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.eco-simple-summary>div{background:#f8fafc;border:1px solid #edf1f5;border-radius:11px;padding:11px}.eco-simple-summary span{display:block;color:var(--muted);font-size:8px}.eco-simple-summary b{display:block;color:var(--navy);font-size:13px;margin-top:4px}.eco-simple-match{margin-top:12px;border-radius:12px;padding:11px 12px;font-size:10px;font-weight:850}.eco-simple-match.ok{background:var(--okbg);color:var(--ok)}.eco-simple-match.bad{background:var(--badbg);color:var(--bad)}.eco-simple-match.pending{background:#f2f4f7;color:#667085}.eco-simple-table{width:100%;border-collapse:collapse;min-width:650px}.eco-simple-table th,.eco-simple-table td{padding:9px 7px;border-bottom:1px solid #edf1f5;text-align:left}.eco-simple-table th{font-size:8px;color:var(--muted);text-transform:uppercase}.eco-simple-table input{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px}.eco-simple-table .desc{min-width:240px}.eco-simple-delete{border:0;background:#fff0ee;color:var(--bad);border-radius:8px;width:30px;height:30px;font-size:16px}.eco-simple-empty{text-align:center!important;color:var(--muted);font-size:10px;padding:25px!important}@media(max-width:800px){.eco-simple-summary{grid-template-columns:1fr 1fr}.eco-simple-amount{grid-template-columns:1fr}}`;
+document.head.appendChild(st)}
+function row(x,i){return `<tr data-eco-row="${esc(x.id)}"><td><input class="desc" data-f="description" value="${esc(x.description)}" placeholder="Ej. UPS 3 kVA"></td><td><input data-f="qty" type="number" min="1" step="1" value="${Number(x.qty||1)}"></td><td><input data-f="unit" type="number" min="0" step="0.01" value="${Number(x.unit||0)}"></td><td><b>${fmt(Number(x.qty||0)*Number(x.unit||0))}</b></td><td><button class="eco-simple-delete" data-del="${esc(x.id)}">×</button></td></tr>`}
+function render(){
+  ensureStyles();
+  const sec=document.getElementById('economica');if(!sec)return;
+  const c=calc();
+  sec.innerHTML=`
+  <div class="hero"><div><h2>Propuesta Económica</h2><p>Registra manualmente el monto final de la cotización y verifica que los valores que colocarás en PanamaCompra den exactamente el mismo total.</p></div><div class="hero-actions"><button class="btn primary" id="ecoSimpleAddTop">＋ Agregar línea</button></div></div>
+  <div class="eco-simple-note" style="margin-top:16px"><strong>Importante:</strong> la cotización se adjunta dentro del expediente únicamente si el pliego la solicita como documento. Aquí solo se usa el monto final aprobado como control interno.</div>
+  <div class="panel" style="margin-top:16px"><div class="panel-head"><div><h3>1. Monto final de la cotización</h3><p>Escribe el total definitivo con el que Grupo UPS participará.</p></div></div><div class="eco-simple-amount"><div class="field"><label>Monto total final de la cotización</label><input id="ecoQuoteTotal" type="number" min="0" step="0.01" value="${Number(S.quoteTotal||0)}" placeholder="0.00"></div><div><span class="chip">Se ingresa manualmente</span></div></div></div>
+  <div class="panel" style="margin-top:16px"><div class="panel-head"><div><h3>2. Valores a registrar en PanamaCompra</h3><p>Agrega una línea por cada equipo o servicio. Puedes usar datos genéricos para probar la función.</p></div><button class="btn small soft" id="ecoSimpleAdd">＋ Línea</button></div><div style="overflow:auto"><table class="eco-simple-table"><thead><tr><th>Descripción</th><th>Cantidad</th><th>Precio unitario</th><th>Subtotal línea</th><th></th></tr></thead><tbody>${S.items.length?S.items.map(row).join(''):`<tr><td colspan="5" class="eco-simple-empty">Todavía no hay líneas. Presiona <strong>+ Línea</strong> para crear una prueba genérica.</td></tr>`}</tbody></table></div></div>
+  <div class="eco-bottom" style="margin-top:16px"><div class="panel"><div class="panel-head"><div><h3>3. ITBMS y total calculado</h3><p>La app calcula el total de los valores que colocarás manualmente en PanamaCompra.</p></div></div><div class="field" style="max-width:260px"><label>ITBMS %</label><input id="ecoTaxSimple" type="number" min="0" step="0.01" value="${Number(S.tax||0)}"></div><div class="eco-simple-summary" style="margin-top:12px"><div><span>Subtotal</span><b>${fmt(c.subtotal)}</b></div><div><span>ITBMS</span><b>${fmt(c.taxAmount)}</b></div><div><span>Total PanamaCompra</span><b>${fmt(c.total)}</b></div><div><span>Monto cotización</span><b>${fmt(S.quoteTotal)}</b></div></div><div class="eco-simple-match ${!c.hasData||!c.hasQuote?'pending':c.match?'ok':'bad'}">${!c.hasQuote?'Pendiente: ingresa el monto final de la cotización.':!c.hasData?'Pendiente: agrega al menos una línea completa.':c.match?'✓ El total calculado coincide exactamente con la cotización final.':`⚠ No coincide. Diferencia: ${fmt(Math.abs(c.diff))}.`}</div></div>
+  <div class="panel"><div class="panel-head"><div><h3>4. Control económico final</h3><p>Verifica los datos antes de registrarlos definitivamente en PanamaCompra.</p></div></div><div class="eco-checks"><label class="eco-check"><input type="checkbox" id="ecoPanamaComplete" ${S.panamaComplete?'checked':''}><span>Valores registrados en PanamaCompra</span></label><label class="eco-check"><input type="checkbox" id="ecoFinalCheckedSimple" ${S.finalChecked?'checked':''}><span>Revisión final de cantidades, precios, ITBMS y total</span></label></div><div class="eco-mini-status" style="margin-top:12px"><div class="eco-mini ${c.hasData?'ok':'pending'}"><span>${c.hasData?'✓':'·'}</span><b>Líneas completas</b></div><div class="eco-mini ${c.match?'ok':'pending'}"><span>${c.match?'✓':'·'}</span><b>Total coincide con cotización</b></div></div></div></div>`;
+  bind();
+}
+function addLine(){S.items.push({id:'s'+Date.now()+Math.random().toString(16).slice(2),description:'Producto o servicio '+(S.items.length+1),qty:1,unit:0});save();render();toast2('Línea agregada')}
+function bind(){
+  document.getElementById('ecoSimpleAdd')?.addEventListener('click',addLine);
+  document.getElementById('ecoSimpleAddTop')?.addEventListener('click',addLine);
+  document.getElementById('ecoQuoteTotal')?.addEventListener('change',e=>{S.quoteTotal=Number(e.target.value||0);save();render()});
+  document.getElementById('ecoTaxSimple')?.addEventListener('change',e=>{S.tax=Number(e.target.value||0);save();render()});
+  document.getElementById('ecoPanamaComplete')?.addEventListener('change',e=>{S.panamaComplete=e.target.checked;save()});
+  document.getElementById('ecoFinalCheckedSimple')?.addEventListener('change',e=>{S.finalChecked=e.target.checked;save()});
+  document.querySelectorAll('[data-eco-row]').forEach(tr=>{
+    tr.querySelectorAll('input[data-f]').forEach(inp=>inp.addEventListener('change',()=>{const item=S.items.find(x=>x.id===tr.dataset.ecoRow);if(!item)return;item[inp.dataset.f]=inp.dataset.f==='description'?inp.value:Number(inp.value||0);save();render()}));
+  });
+  document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{S.items=S.items.filter(x=>x.id!==b.dataset.del);save();render()}));
+}
+function install(){render();const nav=document.querySelector('[data-page="economica"]');if(nav)nav.addEventListener('click',()=>setTimeout(render,0),true)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,900));else setTimeout(install,900);
+window.renderEconomicSimple=render;
+})();
