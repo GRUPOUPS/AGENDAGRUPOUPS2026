@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'licitaciones-v10.js'
+      - '.github/workflows/activar-licitaciones-v10.yml'
 jobs:
   activar:
     runs-on: ubuntu-latest
