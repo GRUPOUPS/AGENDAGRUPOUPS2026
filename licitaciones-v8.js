@@ -1,1 +1,22 @@
-// Navegación v8 desactivada. La navegación estable se controla desde licitaciones-v9.js.
+(()=>{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+let busy=false,started=false,rows=[];
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'B/. '+Number(n||0).toLocaleString('es-PA',{minimumFractionDigits:2,maximumFractionDigits:2});
+function d(v){const x=v?new Date(v):null;return x&&!Number.isNaN(x.getTime())?x:null}
+function short(v){const x=d(v);return x?x.toLocaleDateString('es-PA',{day:'2-digit',month:'short'}).replace('.','').toUpperCase():'—'}
+function long(v){const x=d(v);return x?x.toLocaleString('es-PA',{day:'2-digit',month:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'}):'Sin fecha'}
+function name(r){return (r.name||r.object||r.code||'Licitación').slice(0,90)}
+async function getDb(){const db=window.__gupsLicitacionesDb;if(!db)return null;const {data}=await db.auth.getSession();return data?.session?db:null}
+async function refresh(){const db=await getDb();if(!db)return false;const {data,error}=await db.from('licitaciones').select('*').order('deadline',{ascending:true});if(error){console.error('No se pudieron cargar licitaciones reales',error);return false}rows=data||[];return true}
+function renderStats(){const cards=$$('#licitaciones .tender-summary .stat-card');if(cards.length<5)return;const now=new Date(),week=new Date(now.getTime()+7*86400000);const active=rows.filter(r=>!['Adjudicada','No adjudicada','Cerrada'].includes(r.status||''));const ready=rows.filter(r=>r.status==='Lista para presentar');const evals=rows.filter(r=>r.status==='En evaluación');const soon=rows.filter(r=>{const x=d(r.deadline);return x&&x>=now&&x<=week});const vals=[active.length,ready.length,evals.length,soon.length,0];cards.forEach((c,i)=>{const v=$('.value',c);if(v)v.textContent=String(vals[i]??0);const sub=$('.sub',c);if(i===3&&sub)sub.textContent=soon.length?'Dentro de los próximos 7 días':'Sin cierres en 7 días';if(i===4&&sub)sub.textContent='Se calcularán desde requisitos reales';});}
+function renderList(){const g=$('#tenderGrid');if(!g)return;busy=true;const q=($('#tenderSearch')?.value||'').toLowerCase();const activeBtn=$('#tenderFilters .filter.active');const filter=activeBtn?.dataset.filter||'Todas';const list=rows.filter(r=>(filter==='Todas'||r.status===filter)&&(`${r.code} ${r.entity||''} ${r.name||''} ${r.object||''}`.toLowerCase().includes(q)));g.innerHTML=list.length?list.map(r=>`<article class="tender-card status-prep" data-real-tender="${esc(r.id)}"><div class="tender-top"><div><h4>${esc(name(r))}</h4><div class="entity">${esc(r.code)} · ${esc(r.entity||'—')}</div></div><span class="status warn">${esc((r.status||'En preparación').toUpperCase())}</span></div><p class="object">${esc(r.object||'')}</p><div class="tender-kpis"><div class="tender-kpi"><div class="k">Cierre</div><div class="v">${esc(short(r.deadline))}</div></div><div class="tender-kpi"><div class="k">Monto</div><div class="v">${money(r.reference_amount)}</div></div><div class="tender-kpi"><div class="k">Avance</div><div class="v">${Number(r.progress||0)}%</div></div><div class="tender-kpi"><div class="k">Origen</div><div class="v">REAL</div></div></div><div class="tender-foot"><span class="chip">${esc(long(r.deadline))}</span><button class="btn small primary" onclick="openTender('${r.id}')">Abrir expediente</button></div></article>`).join(''):'<div class="panel prod-empty"><strong>Aún no hay licitaciones reales guardadas</strong><br>Ve a Nueva licitación y guarda el primer proceso.</div>';renderStats();queueMicrotask(()=>{busy=false});}
+async function forceReal(){if(busy)return;if(!(await refresh()))return;renderList();}
+function observe(){const g=$('#tenderGrid');if(!g)return;new MutationObserver(()=>{if(busy)return;const hasDemo=!!g.querySelector('.tender-card:not([data-real-tender])');if(hasDemo||!g.querySelector('[data-real-tender]'))setTimeout(forceReal,20)}).observe(g,{childList:true,subtree:false});
+const search=$('#tenderSearch');search?.addEventListener('input',()=>setTimeout(renderList,0));
+$('#tenderFilters')?.addEventListener('click',()=>setTimeout(renderList,20));
+}
+async function boot(){if(started)return;started=true;for(let i=0;i<12;i++){if(await getDb())break;await new Promise(r=>setTimeout(r,300))}if(!(await getDb()))return;await forceReal();observe();document.addEventListener('click',e=>{const nav=e.target.closest('[data-page="licitaciones"],[data-go="licitaciones"]');if(nav)setTimeout(forceReal,80)},false)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,1900));else setTimeout(boot,1900);
+})();
