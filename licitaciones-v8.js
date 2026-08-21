@@ -19,3 +19,4 @@ function observe(){const g=$('#tenderGrid');if(!g)return;new MutationObserver(()
 async function boot(){if(started)return;started=true;for(let i=0;i<12;i++){if(await getDb())break;await new Promise(r=>setTimeout(r,300))}if(!(await getDb()))return;await forceReal();observe();document.addEventListener('click',e=>{const nav=e.target.closest('[data-page="licitaciones"],[data-go="licitaciones"]');if(nav)setTimeout(forceReal,30)},true)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,1900));else setTimeout(boot,1900);
 })();
+(()=>{if(document.querySelector('script[data-gups-v12]'))return;const s=document.createElement('script');s.src='licitaciones-v12.js?v=20260821-1';s.dataset.gupsV12='1';document.head.appendChild(s)})();
