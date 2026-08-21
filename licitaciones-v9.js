@@ -32,7 +32,10 @@ function masterGo(page){
  try{
   if(page==='documentos'&&typeof renderDocuments==='function')renderDocuments();
   if(page==='firmas'&&typeof renderSignatureFolders==='function')renderSignatureFolders();
-  if(page==='licitaciones'&&typeof renderTenders==='function')renderTenders();
+  if(page==='licitaciones'){
+    if(typeof window.gupsRenderRealTenders==='function') window.gupsRenderRealTenders();
+    else if(typeof renderTenders==='function') renderTenders();
+  }
   if(page==='competencia'&&typeof renderCompetition==='function')renderCompetition();
   if(page==='resumen'&&typeof renderExecutive==='function')renderExecutive();
   if(page==='economica'&&typeof window.renderEconomicSimple==='function')window.renderEconomicSimple();
