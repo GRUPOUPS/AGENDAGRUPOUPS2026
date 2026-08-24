@@ -23,3 +23,4 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 (()=>{if(document.querySelector('script[data-gups-v13]'))return;const s=document.createElement('script');s.src='licitaciones-v13.js?v=20260821-2';s.dataset.gupsV13='1';document.head.appendChild(s)})();
 (()=>{if(document.querySelector('script[data-gups-v14]'))return;const s=document.createElement('script');s.src='licitaciones-v14.js?v=20260821-1';s.dataset.gupsV14='1';document.head.appendChild(s)})();
 (()=>{if(document.querySelector('script[data-gups-v15]'))return;const s=document.createElement('script');s.src='licitaciones-v15.js?v=20260824-1';s.dataset.gupsV15='1';document.head.appendChild(s)})();
+(()=>{if(document.querySelector('script[data-gups-v16]'))return;const s=document.createElement('script');s.src='licitaciones-v16.js?v=20260824-1';s.dataset.gupsV16='1';document.head.appendChild(s)})();
