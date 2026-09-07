@@ -1,0 +1,100 @@
+name: Fix Seguimiento Comercial shortcut access
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-seguimiento-shortcut-access.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fix shortcut visibility for Yorlenis Sebastian and Yoselin
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+
+          # Ensure card exists.
+          if 'id="callsOption"' not in text:
+              marker = '''        <a id="dashboardOption" class="option hidden" href="dashboard-semanal.html">
+          <div class="icon">📊</div>
+          <h3>Dashboard semanal</h3>
+          <p id="dashboardMenuText">Consulta el resumen semanal del equipo comercial.</p>
+        </a>'''
+              card = '''
+
+        <a id="callsOption" class="option hidden" href="https://grupoups.github.io/seguimientollamadas/" target="_blank" rel="noopener">
+          <div class="icon">☎️</div>
+          <h3>Seguimiento Comercial</h3>
+          <p>Acceso a llamadas, clientes, cotizaciones y seguimientos comerciales.</p>
+        </a>'''
+              if marker not in text:
+                  raise SystemExit('No se encontro dashboardOption')
+              text = text.replace(marker, marker + card, 1)
+
+          # Replace helper so it also checks the authenticated user's email.
+          new_helper = '''  function isCallsShortcutUser(profile,user){
+    const t=profileText(profile);
+    const mail=normalizeText(user?.email||profile?.email||'');
+    return isYorlenis(profile)
+      || mail==='info@grupoups.com'
+      || mail==='recepcionsm@grupoups.com'
+      || mail==='ygoncalves@grupoups.com'
+      || t.includes('yorlenis')
+      || t.includes('sebasti')
+      || t.includes('recepcion')
+      || t.includes('yoselin')
+      || t.includes('goncalves');
+  }'''
+
+          text, count = re.subn(
+              r'  function isCallsShortcutUser\(profile(?:,user)?\)\{.*?\n  \}',
+              new_helper,
+              text,
+              count=1,
+              flags=re.S
+          )
+          if count == 0:
+              anchor = '''  function isReceptionAccount(profile){
+    const t=profileText(profile);
+    return t.includes('recepcionsm@grupoups.com')
+      || t.includes('sebasti')
+      || t.includes('recepcion');
+  }'''
+              if anchor not in text:
+                  raise SystemExit('No se encontro isReceptionAccount')
+              text = text.replace(anchor, anchor + '\n\n' + new_helper, 1)
+
+          # Make openMenu pass the authenticated user too.
+          text = text.replace(
+              "if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));",
+              "if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile,user));"
+          )
+
+          # Add a tiny version marker to help verify GitHub Pages refresh.
+          if 'data-shortcut-version="3"' not in text:
+              text = text.replace('<body>', '<body data-shortcut-version="3">', 1)
+
+          p.write_text(text, encoding='utf-8')
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Fix Seguimiento Comercial shortcut visibility"
+            git push
+          fi
