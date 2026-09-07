@@ -1,0 +1,108 @@
+name: Fix Seguimiento Comercial menu final
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-seguimiento-menu-final.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch menu access
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+
+          old = "function setMenuAccess({commercial=false,reception=false,gups=false,dashboard=false,manager=false}={}){"
+          new = "function setMenuAccess({commercial=false,reception=false,gups=false,dashboard=false,calls=false,manager=false}={}){"
+          if old in text:
+              text = text.replace(old,new,1)
+
+          marker = "document.getElementById('dashboardOption').classList.toggle('hidden',!dashboard);"
+          addition = marker + "\n    document.getElementById('callsOption').classList.toggle('hidden',!calls);"
+          if addition not in text:
+              if marker not in text:
+                  raise SystemExit('No se encontro dashboardOption en setMenuAccess')
+              text = text.replace(marker,addition,1)
+
+          # Yorlenis
+          yor_old = '''        commercial:true,
+        reception:true,
+        gups:false,
+        dashboard:true,
+        manager:true'''
+          yor_new = '''        commercial:true,
+        reception:true,
+        gups:false,
+        dashboard:true,
+        calls:true,
+        manager:true'''
+          text = text.replace(yor_old,yor_new,1)
+
+          # Sebastian / Recepcion - second identical block after Yorlenis
+          idx = text.find(yor_old)
+          if idx != -1:
+              text = text[:idx] + text[idx:].replace(yor_old,yor_new,1)
+
+          # Add Yoselin detector if missing
+          if 'function isYoselin(profile)' not in text:
+              anchor = '''  function isEngineer(profile){'''
+              helper = '''  function isYoselin(profile){
+    const t=profileText(profile);
+    return t.includes('ygoncalves@grupoups.com')
+      || t.includes('yoselin')
+      || t.includes('goncalves');
+  }
+
+'''
+              if anchor not in text:
+                  raise SystemExit('No se encontro isEngineer')
+              text = text.replace(anchor,helper+anchor,1)
+
+          # Add explicit Yoselin route before Engineer
+          if 'if(isYoselin(profile)){' not in text:
+              anchor = '''    if(isEngineer(profile)){'''
+              block = '''    if(isYoselin(profile)){
+      openMenu(profile,user,{
+        commercial:true,
+        reception:true,
+        gups:false,
+        dashboard:true,
+        calls:true,
+        manager:true
+      });
+      return;
+    }
+
+'''
+              if anchor not in text:
+                  raise SystemExit('No se encontro ruta de engineer')
+              text = text.replace(anchor,block+anchor,1)
+
+          # Remove old openMenu visibility override so setMenuAccess controls it.
+          text = text.replace("    const callsOption=document.getElementById('callsOption');\n    if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));\n","")
+          text = text.replace("    const callsOption=document.getElementById('callsOption');\n    if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile,user));\n","")
+
+          p.write_text(text,encoding='utf-8')
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Fix Seguimiento Comercial menu visibility"
+            git push
+          fi
