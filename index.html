@@ -69,6 +69,12 @@
           <h3>Dashboard semanal</h3>
           <p id="dashboardMenuText">Consulta el resumen semanal del equipo comercial.</p>
         </a>
+
+        <a id="callsOption" class="option hidden" href="https://grupoups.github.io/seguimientollamadas/" target="_blank" rel="noopener">
+          <div class="icon">☎️</div>
+          <h3>Seguimiento Comercial</h3>
+          <p>Acceso a llamadas, clientes, cotizaciones y seguimientos comerciales.</p>
+        </a>
       </div>
     </section>
   </main>
@@ -111,6 +117,16 @@
       || t.includes('recepcion');
   }
 
+  function isCallsShortcutUser(profile){
+    const t=profileText(profile);
+    return isYorlenis(profile)
+      || t.includes('recepcionsm@grupoups.com')
+      || t.includes('sebasti')
+      || t.includes('ygoncalves@grupoups.com')
+      || t.includes('yoselin')
+      || t.includes('goncalves');
+  }
+
   function isEngineer(profile){
     const t=profileText(profile);
     return profile?.access_role==='management_viewer'
@@ -130,6 +146,8 @@
 
   function openMenu(profile,user,access){
     setMenuAccess(access);
+    const callsOption=document.getElementById('callsOption');
+    if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));
     document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;
     document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';
     show(menuView);
