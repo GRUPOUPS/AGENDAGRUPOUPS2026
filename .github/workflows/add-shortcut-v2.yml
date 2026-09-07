@@ -1,0 +1,42 @@
+name: Add shortcut v2
+on:
+  push:
+    paths:
+      - '.github/workflows/add-shortcut-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'id="callsOption"' not in s:
+              anchor='''        <a id="dashboardOption" class="option hidden" href="dashboard-semanal.html">\n          <div class="icon">📊</div>\n          <h3>Dashboard semanal</h3>\n          <p id="dashboardMenuText">Consulta el resumen semanal del equipo comercial.</p>\n        </a>'''
+              card='''\n\n        <a id="callsOption" class="option hidden" href="https://grupoups.github.io/seguimientollamadas/" target="_blank" rel="noopener">\n          <div class="icon">☎️</div>\n          <h3>Seguimiento Comercial</h3>\n          <p>Acceso a llamadas, clientes, cotizaciones y seguimientos comerciales.</p>\n        </a>'''
+              if anchor not in s: raise SystemExit('dashboardOption not found')
+              s=s.replace(anchor,anchor+card,1)
+          if 'function isCallsShortcutUser' not in s:
+              anchor='''  function isReceptionAccount(profile){\n    const t=profileText(profile);\n    return t.includes('recepcionsm@grupoups.com')\n      || t.includes('sebasti')\n      || t.includes('recepcion');\n  }'''
+              helper='''\n\n  function isCallsShortcutUser(profile){\n    const t=profileText(profile);\n    return isYorlenis(profile)\n      || t.includes('recepcionsm@grupoups.com')\n      || t.includes('sebasti')\n      || t.includes('ygoncalves@grupoups.com')\n      || t.includes('yoselin')\n      || t.includes('goncalves');\n  }'''
+              if anchor not in s: raise SystemExit('reception helper not found')
+              s=s.replace(anchor,anchor+helper,1)
+          old='''  function openMenu(profile,user,access){\n    setMenuAccess(access);\n    document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;\n    document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';\n    show(menuView);\n  }'''
+          new='''  function openMenu(profile,user,access){\n    setMenuAccess(access);\n    const callsOption=document.getElementById('callsOption');\n    if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));\n    document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;\n    document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';\n    show(menuView);\n  }'''
+          if new not in s:
+              if old not in s: raise SystemExit('openMenu not found')
+              s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          git diff --cached --quiet || (git commit -m 'Add Seguimiento Comercial shortcut' && git push)
