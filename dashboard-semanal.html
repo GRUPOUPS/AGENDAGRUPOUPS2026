@@ -453,8 +453,8 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     const period=rangeLabel(start,end);
     const {error}=await client.functions.invoke('send-agenda-email',{
       body:{
-        to:'mzapata@grupoups.com',
-        subject:'Dashboard semanal disponible | Grupo UPS',
+        to:'info@grupoups.com',
+        subject:'PRUEBA | Dashboard semanal disponible | Grupo UPS',
         html:`
           <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#202534;">
             <h2 style="color:#0b4da2;">Dashboard semanal disponible</h2>
@@ -472,7 +472,7 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
       }
     });
     if(error){
-      console.error('Aviso dashboard Ing. Zapata:',error);
+      console.error('Aviso dashboard de prueba:',error);
       return false;
     }
     return true;
@@ -515,14 +515,14 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
       status.classList.add('error');status.textContent='No se pudo registrar el dashboard: '+(dbError.message||'Error de Supabase');return;
     }
 
-    status.textContent='Dashboard publicado. Enviando aviso al Ing. Zapata...';
+    status.textContent='Dashboard publicado. Enviando correo de prueba...';
     const noticeSent=await sendDashboardNotice(start,end);
 
     btn.disabled=false;btn.textContent='Subir dashboard';
     status.classList.add(noticeSent?'ok':'error');
     status.textContent=noticeSent
-      ? 'Dashboard publicado y aviso enviado al Ing. Zapata.'
-      : 'Dashboard publicado correctamente, pero no se pudo enviar el aviso al Ing. Zapata.';
+      ? 'Dashboard publicado y correo de prueba enviado a info@grupoups.com.'
+      : 'Dashboard publicado correctamente, pero no se pudo enviar el correo de prueba.';
     document.getElementById('dashboardFile').value='';
     document.getElementById('description').value='';
     document.getElementById('formPanel').classList.add('hidden');
