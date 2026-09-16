@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add shortcut for Yorlenis, Sebastian and Yoselin
+      - name: Actualizar informes semanales
         shell: python
         run: |
           from pathlib import Path
@@ -24,67 +24,92 @@ jobs:
           path = Path('index.html')
           text = path.read_text(encoding='utf-8')
 
-          card = '''
-
-        <a id="callsOption" class="option hidden" href="https://grupoups.github.io/seguimientollamadas/" target="_blank" rel="noopener">
-          <div class="icon">☎️</div>
-          <h3>Seguimiento Comercial</h3>
-          <p>Acceso a llamadas, clientes, cotizaciones y seguimientos comerciales.</p>
-        </a>'''
-
-          if 'id="callsOption"' not in text:
-              anchor = '''        <a id="dashboardOption" class="option hidden" href="dashboard-semanal.html">
-          <div class="icon">📊</div>
-          <h3>Dashboard semanal</h3>
-          <p id="dashboardMenuText">Consulta el resumen semanal del equipo comercial.</p>
-        </a>'''
+          seller_card = '''
+        <a id="weeklyReportSellerOption" class="option hidden" href="ver-informe.html" target="_blank" rel="noopener noreferrer">
+          <div class="icon">📄</div>
+          <h3>Mi informe semanal</h3>
+          <p>Consulta tu último informe semanal disponible.</p>
+        </a>
+'''
+          if 'id="weeklyReportSellerOption"' not in text:
+              anchor = '''<a id="weeklyReportAdminOption" class="option hidden" href="#">
+  <div class="icon">📎</div>
+  <h3>Informes semanales</h3>
+  <p>Adjunta el enlace vigente y elige a qué vendedor va dirigido.</p>
+</a>'''
               if anchor not in text:
-                  raise SystemExit('No se encontro dashboardOption para insertar el atajo')
-              text = text.replace(anchor, anchor + card, 1)
+                  raise SystemExit('No se encontro weeklyReportAdminOption')
+              text = text.replace(anchor, anchor + seller_card, 1)
 
-          helper = '''
+          seller_helper = '''
 
-  function isCallsShortcutUser(profile){
+  function weeklyReportSellerKey(profile){
     const t=profileText(profile);
-    return isYorlenis(profile)
-      || t.includes('recepcionsm@grupoups.com')
-      || t.includes('sebasti')
-      || t.includes('ygoncalves@grupoups.com')
-      || t.includes('yoselin')
-      || t.includes('goncalves');
+    if(t.includes('eguzman@grupoups.com') || t.includes('eric guzman')) return 'eric';
+    if(t.includes('hmartinez@grupoups.com') || t.includes('hector martinez')) return 'hector';
+    if(t.includes('ygoncalves@grupoups.com') || t.includes('yoselin') || t.includes('goncalves')) return 'yoselin';
+    return null;
   }'''
-
-          if 'function isCallsShortcutUser' not in text:
-              anchor = '''  function isReceptionAccount(profile){
+          if 'function weeklyReportSellerKey' not in text:
+              anchor = '''  function isYorlenis(profile){
     const t=profileText(profile);
-    return t.includes('recepcionsm@grupoups.com')
-      || t.includes('sebasti')
-      || t.includes('recepcion');
+    return normalizeText(profile?.person_code)==='yorlenis' || t.includes('yorlenis');
   }'''
               if anchor not in text:
-                  raise SystemExit('No se encontro isReceptionAccount para insertar helper')
-              text = text.replace(anchor, anchor + helper, 1)
+                  raise SystemExit('No se encontro isYorlenis')
+              text = text.replace(anchor, anchor + seller_helper, 1)
 
-          old_open = '''  function openMenu(profile,user,access){
-    setMenuAccess(access);
-    document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;
-    document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';
-    show(menuView);
-  }'''
-
-          new_open = '''  function openMenu(profile,user,access){
-    setMenuAccess(access);
-    const callsOption=document.getElementById('callsOption');
+          seller_toggle = '''    const weeklyReportSellerOption=document.getElementById('weeklyReportSellerOption');
+    if(weeklyReportSellerOption) weeklyReportSellerOption.classList.toggle('hidden',!weeklyReportSellerKey(profile));
+'''
+          if "const weeklyReportSellerOption=document.getElementById('weeklyReportSellerOption')" not in text:
+              anchor = '''    const callsOption=document.getElementById('callsOption');
     if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));
-    document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;
-    document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';
-    show(menuView);
-  }'''
+'''
+              if anchor not in text:
+                  raise SystemExit('No se encontro callsOption')
+              text = text.replace(anchor, anchor + seller_toggle, 1)
 
-          if new_open not in text:
-              if old_open not in text:
-                  raise SystemExit('No se encontro openMenu para actualizar acceso')
-              text = text.replace(old_open, new_open, 1)
+          text = text.replace('Adjunta el enlace vigente y elige a qué vendedor va dirigido.','Adjunta el archivo HTML y elige a qué vendedor va dirigido.',1)
+          text = text.replace('Selecciona el vendedor y guarda el enlace del informe semanal vigente.','Selecciona el vendedor, adjunta el archivo HTML y revisa la vista previa antes de enviarlo.',1)
+
+          old_path = "storagePath=`informes-vendedores/${seller}/${Date.now()}_${safeFileName}`;"
+          new_path = "storagePath=`informes-vendedores/${seller}/informe.html`;"
+          if old_path in text:
+              text = text.replace(old_path,new_path,1)
+          elif new_path not in text:
+              raise SystemExit('No se encontro la ruta de Storage')
+
+          old_upload = """          {
+            upsert:false,
+            contentType:'text/html; charset=utf-8'
+          }"""
+          new_upload = """          {
+            upsert:true,
+            contentType:'text/html; charset=utf-8'
+          }"""
+          if old_upload in text:
+              text = text.replace(old_upload,new_upload,1)
+          elif new_upload not in text:
+              raise SystemExit('No se encontro la configuracion de upload')
+
+          old_link = """      const url=signedData.signedUrl;
+     msg.textContent='Archivo listo. Enviando correo...';
+      const safeUrl=url
+        .replace(/&/g,'&amp;')
+        .replace(/\"/g,'&quot;');"""
+          new_link = """      const reportUrl=signedData.signedUrl;
+      const viewerUrl=`https://grupoups.github.io/AGENDAGRUPOUPS2026/ver-informe.html?src=${encodeURIComponent(reportUrl)}`;
+      msg.textContent='Archivo listo. Enviando correo...';
+      const safeUrl=viewerUrl
+        .replace(/&/g,'&amp;')
+        .replace(/\"/g,'&quot;');"""
+          if old_link in text:
+              text = text.replace(old_link,new_link,1)
+          elif 'const viewerUrl=`https://grupoups.github.io/AGENDAGRUPOUPS2026/ver-informe.html?src=' not in text:
+              raise SystemExit('No se encontro el enlace de correo')
+
+          text = text.replace("msg.textContent='El informe se guardó, pero no se pudo enviar el correo.';","msg.textContent='El archivo se subió, pero no se pudo enviar el correo.';",1)
 
           path.write_text(text, encoding='utf-8')
 
@@ -96,6 +121,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Add Seguimiento Comercial shortcut"
+            git commit -m "Agregar informes individuales para vendedores"
             git push
           fi
