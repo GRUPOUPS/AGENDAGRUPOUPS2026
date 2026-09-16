@@ -103,18 +103,22 @@
       </select>
     </label>
 
-    <label>
-      <span class="label">Enlace del informe</span>
-      <input id="weeklyReportUrl"
-             type="url"
-             placeholder="https://...">
-    </label>
+  <label>
+  <span class="label">Archivo HTML</span>
+  <input id="weeklyReportFile"
+         type="file"
+         accept=".html,.htm,text/html">
+</label>
+
+<div class="note" style="text-align:left;">
+  Selecciona el archivo HTML correspondiente al informe semanal del vendedor.
+</div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button id="saveWeeklyReportBtn"
               class="btn primary"
               type="button">
-        Guardar informe
+        Subir y enviar informe
       </button>
 
       <button id="closeWeeklyReportAdminBtn"
@@ -319,11 +323,18 @@ if(closeWeeklyReportAdminBtn){
 if(saveWeeklyReportBtn){
   saveWeeklyReportBtn.addEventListener('click',async()=>{
     const seller=document.getElementById('weeklyReportSeller').value;
-    const url=document.getElementById('weeklyReportUrl').value.trim();
+    const file=document.getElementById('weeklyReportFile').files[0];
     const msg=document.getElementById('weeklyReportAdminMsg');
 
-    if(!/^https:\/\//i.test(url)){
-      msg.textContent='Ingresa un enlace https:// válido.';
+    if(!file){
+      msg.textContent='Selecciona el archivo HTML del informe.';
+      return;
+    }
+
+    const ext=(file.name.split('.').pop()||'').toLowerCase();
+
+    if(!['html','htm'].includes(ext)){
+      msg.textContent='Solo se permiten archivos .html o .htm.';
       return;
     }
 
@@ -348,22 +359,72 @@ if(saveWeeklyReportBtn){
     }
 
     saveWeeklyReportBtn.disabled=true;
-    saveWeeklyReportBtn.textContent='Guardando...';
+    saveWeeklyReportBtn.textContent='Subiendo...';
+    msg.textContent='Subiendo informe...';
+
+    let storagePath='';
 
     try{
+      const safeFileName=file.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-zA-Z0-9._-]+/g,'_');
+
+      storagePath=`informes-vendedores/${seller}/${Date.now()}_${safeFileName}`;
+
+      const {error:uploadError}=await client.storage
+        .from('weekly-dashboards')
+        .upload(
+          storagePath,
+          file,
+          {
+            upsert:false,
+            contentType:'text/html; charset=utf-8'
+          }
+        );
+
+      if(uploadError){
+        console.error(uploadError);
+        msg.textContent='No se pudo subir el archivo.';
+        return;
+      }
+
+      msg.textContent='Archivo subido. Preparando enlace...';
+
+      const {data:signedData,error:signedError}=await client.storage
+        .from('weekly-dashboards')
+        .createSignedUrl(
+          storagePath,
+          60*60*24*30
+        );
+
+      if(signedError || !signedData?.signedUrl){
+        console.error(signedError);
+        msg.textContent='El archivo se subió, pero no se pudo generar el enlace.';
+        return;
+      }
+
+      const url=signedData.signedUrl;
       const key=`weekly_report_${seller}`;
 
       const {error:saveError}=await client
         .from('app_settings')
-        .upsert({key,value:url},{onConflict:'key'});
+        .upsert(
+          {key,value:url},
+          {onConflict:'key'}
+        );
 
       if(saveError){
         console.error(saveError);
-        msg.textContent='No se pudo guardar el informe.';
+        msg.textContent='El archivo se subió, pero no se pudo guardar el informe.';
         return;
       }
 
       msg.textContent='Informe guardado. Enviando correo...';
+
+      const safeUrl=url
+        .replace(/&/g,'&amp;')
+        .replace(/"/g,'&quot;');
 
       const {error:emailError}=await client.functions.invoke(
         'send-agenda-email',
@@ -372,21 +433,28 @@ if(saveWeeklyReportBtn){
             to:sellerInfo.email,
             subject:'Informe semanal disponible | Grupo UPS',
             html:`
-              <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;">
+              <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#202534;">
                 <h2 style="color:#0b4da2;">Informe semanal</h2>
 
                 <p>Hola ${sellerInfo.name},</p>
 
-                <p>Tu informe semanal ya se encuentra disponible para consulta.</p>
+                <p>
+                  Tu informe semanal ya se encuentra disponible para consulta.
+                </p>
 
                 <p style="margin:28px 0;">
-                  <a href="${url}"
-                     style="background:#0b4da2;color:#fff;padding:12px 20px;text-decoration:none;border-radius:8px;font-weight:bold;">
+                  <a
+                    href="${safeUrl}"
+                    style="background:#0b4da2;color:#ffffff;padding:12px 20px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;"
+                  >
                     Ver informe semanal
                   </a>
                 </p>
 
-                <p>Saludos cordiales,<br><strong>Grupo UPS</strong></p>
+                <p>
+                  Saludos cordiales,<br>
+                  <strong>Grupo UPS</strong>
+                </p>
               </div>
             `
           }
@@ -399,14 +467,15 @@ if(saveWeeklyReportBtn){
         return;
       }
 
-      msg.textContent=`Informe guardado y enviado a ${sellerInfo.name}.`;
+      document.getElementById('weeklyReportFile').value='';
+      msg.textContent=`Informe subido y enviado a ${sellerInfo.name}.`;
 
     }catch(error){
       console.error(error);
       msg.textContent='Ocurrió un error al procesar el informe.';
     }finally{
       saveWeeklyReportBtn.disabled=false;
-      saveWeeklyReportBtn.textContent='Guardar informe';
+      saveWeeklyReportBtn.textContent='Subir y enviar informe';
     }
   });
 }
