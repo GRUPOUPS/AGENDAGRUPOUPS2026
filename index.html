@@ -115,11 +115,17 @@
 </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button id="saveWeeklyReportBtn"
-              class="btn primary"
-              type="button">
-        Subir y enviar informe
-      </button>
+    <button id="previewWeeklyReportBtn"
+        class="btn primary"
+        type="button">
+  Vista previa
+</button>
+
+<button id="saveWeeklyReportBtn"
+        class="btn primary hidden"
+        type="button">
+  Confirmar y enviar
+</button>
 
       <button id="closeWeeklyReportAdminBtn"
               class="btn"
@@ -208,6 +214,11 @@
     const callsOption=document.getElementById('callsOption');
     if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));
     const weeklyReportAdminOption=document.getElementById('weeklyReportAdminOption');
+    const weeklyReportAdmin=document.getElementById('weeklyReportAdmin');
+
+if(weeklyReportAdmin){
+  weeklyReportAdmin.classList.add('hidden');
+}
 if(weeklyReportAdminOption) weeklyReportAdminOption.classList.toggle('hidden',!isYorlenis(profile));
     document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;
     document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';
@@ -304,7 +315,52 @@ if(weeklyReportAdminOption) weeklyReportAdminOption.classList.toggle('hidden',!i
 const weeklyReportAdminOption=document.getElementById('weeklyReportAdminOption');
 const weeklyReportAdmin=document.getElementById('weeklyReportAdmin');
 const saveWeeklyReportBtn=document.getElementById('saveWeeklyReportBtn');
+  const previewWeeklyReportBtn=document.getElementById('previewWeeklyReportBtn');
+  const weeklyReportFile=document.getElementById('weeklyReportFile');
+const weeklyReportSeller=document.getElementById('weeklyReportSeller');
+
+weeklyReportFile?.addEventListener('change',()=>{
+  saveWeeklyReportBtn.classList.add('hidden');
+});
+
+weeklyReportSeller?.addEventListener('change',()=>{
+  saveWeeklyReportBtn.classList.add('hidden');
+});
 const closeWeeklyReportAdminBtn=document.getElementById('closeWeeklyReportAdminBtn');
+  if(previewWeeklyReportBtn){
+  previewWeeklyReportBtn.addEventListener('click',()=>{
+    const file=document.getElementById('weeklyReportFile').files[0];
+    const msg=document.getElementById('weeklyReportAdminMsg');
+
+    if(!file){
+      msg.textContent='Selecciona primero el archivo HTML del informe.';
+      return;
+    }
+
+    const ext=(file.name.split('.').pop()||'').toLowerCase();
+
+    if(!['html','htm'].includes(ext)){
+      msg.textContent='Solo se permiten archivos .html o .htm.';
+      return;
+    }
+
+    const previewUrl=URL.createObjectURL(file);
+    const previewWindow=window.open(previewUrl,'_blank');
+
+    if(!previewWindow){
+      URL.revokeObjectURL(previewUrl);
+      msg.textContent='El navegador bloqueó la vista previa. Permite ventanas emergentes.';
+      return;
+    }
+
+    saveWeeklyReportBtn.classList.remove('hidden');
+    msg.textContent='Vista previa abierta. Si todo está correcto, confirma el envío.';
+
+    setTimeout(()=>{
+      URL.revokeObjectURL(previewUrl);
+    },600000);
+  });
+}
 
 if(weeklyReportAdminOption){
   weeklyReportAdminOption.addEventListener('click',e=>{
@@ -405,23 +461,7 @@ if(saveWeeklyReportBtn){
       }
 
       const url=signedData.signedUrl;
-      const key=`weekly_report_${seller}`;
-
-      const {error:saveError}=await client
-        .from('app_settings')
-        .upsert(
-          {key,value:url},
-          {onConflict:'key'}
-        );
-
-      if(saveError){
-        console.error(saveError);
-        msg.textContent='El archivo se subió, pero no se pudo guardar el informe.';
-        return;
-      }
-
-      msg.textContent='Informe guardado. Enviando correo...';
-
+     msg.textContent='Archivo listo. Enviando correo...';
       const safeUrl=url
         .replace(/&/g,'&amp;')
         .replace(/"/g,'&quot;');
@@ -469,13 +509,15 @@ if(saveWeeklyReportBtn){
 
       document.getElementById('weeklyReportFile').value='';
       msg.textContent=`Informe subido y enviado a ${sellerInfo.name}.`;
+      saveWeeklyReportBtn.classList.add('hidden');
+
 
     }catch(error){
       console.error(error);
       msg.textContent='Ocurrió un error al procesar el informe.';
     }finally{
       saveWeeklyReportBtn.disabled=false;
-      saveWeeklyReportBtn.textContent='Subir y enviar informe';
+      saveWeeklyReportBtn.textContent='Confirmar y enviar';
     }
   });
 }
