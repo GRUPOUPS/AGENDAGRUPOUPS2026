@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi informe semanal | Grupo UPS</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root{--blue:#0b4da2;--blue-dark:#073b80;--muted:#667085;--border:#dbe2ec;--bg:#f4f7fb;--danger:#b42318}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#202534}
+body{min-height:100vh;display:flex;flex-direction:column}
+.hidden{display:none!important}
+.topbar{min-height:72px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:12px}.badge{width:44px;height:44px;border-radius:13px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:900}.brand strong{display:block;color:var(--blue-dark);font-size:18px}.brand span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.back{border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--blue-dark);padding:10px 14px;font-weight:800;text-decoration:none}
+.status{flex:1;display:grid;place-items:center;padding:40px 20px;text-align:center}.status-card{max-width:620px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:28px;box-shadow:0 12px 35px rgba(22,34,51,.08)}.status h2{margin:0 0 10px;color:var(--blue-dark)}.status p{margin:0;color:var(--muted);line-height:1.5}.status.error h2{color:var(--danger)}
+#reportFrame{width:100%;flex:1;min-height:calc(100vh - 72px);border:0;background:#fff}
+@media(max-width:650px){.toolbar{align-items:flex-start}.brand span{display:none}.back{padding:9px 11px;font-size:13px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="badge">UPS</div>
+    <div><strong>Informe semanal</strong><span>Grupo UPS</span></div>
+  </div>
+  <a class="back" href="index.html">Regresar a Agenda</a>
+</header>
+
+<div id="status" class="status">
+  <div class="status-card">
+    <h2>Cargando informe…</h2>
+    <p>Estamos preparando el informe semanal.</p>
+  </div>
+</div>
+
+<iframe id="reportFrame" class="hidden" title="Informe semanal" sandbox="allow-scripts allow-forms allow-modals allow-popups allow-downloads"></iframe>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  'use strict';
+
+  const SUPABASE_URL='https://zvbgefzvbhjhcvlkeiyn.supabase.co';
+  const SUPABASE_KEY='sb_publishable_qXDM-qp_nrHJjynldGyUTw_T8OCbM_7';
+  const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  const status=document.getElementById('status');
+  const frame=document.getElementById('reportFrame');
+  let reportBlobUrl='';
+
+  function normalizeText(value){
+    return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  }
+
+  function profileText(profile){
+    return normalizeText(`${profile?.full_name||''} ${profile?.email||''} ${profile?.person_code||''}`);
+  }
+
+  function sellerKeyFromProfile(profile){
+    const t=profileText(profile);
+    if(t.includes('eguzman@grupoups.com')||t.includes('eric guzman')) return 'eric';
+    if(t.includes('hmartinez@grupoups.com')||t.includes('hector martinez')) return 'hector';
+    if(t.includes('ygoncalves@grupoups.com')||t.includes('yoselin')||t.includes('goncalves')) return 'yoselin';
+    return null;
+  }
+
+  function showError(title,message){
+    status.classList.add('error');
+    status.classList.remove('hidden');
+    frame.classList.add('hidden');
+    status.innerHTML=`<div class="status-card"><h2>${title}</h2><p>${message}</p></div>`;
+  }
+
+  function repairSavedPageDependencies(htmlText){
+    let html=String(htmlText||'');
+    html=html.replace(
+      /<script\b[^>]*src=["'][^"']*(?:_files\/)?chart(?:\.umd)?(?:\.min)?\.js(?:\.descarga)?[^"']*["'][^>]*><\/script>/ig,
+      '<scr'+'ipt src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></scr'+'ipt>'
+    );
+    html=html.replace(
+      /<link\b[^>]*href=["'][^"']*(?:_files\/)?all\.min\.css[^"']*["'][^>]*>/ig,
+      '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">'
+    );
+    return html;
+  }
+
+  function isAllowedSignedUrl(value){
+    try{
+      const url=new URL(value);
+      return url.origin===SUPABASE_URL && url.pathname.startsWith('/storage/v1/object/sign/weekly-dashboards/');
+    }catch{
+      return false;
+    }
+  }
+
+  async function renderSignedUrl(signedUrl){
+    if(!isAllowedSignedUrl(signedUrl)) throw new Error('El enlace del informe no es válido.');
+
+    const response=await fetch(signedUrl,{cache:'no-store'});
+    if(!response.ok) throw new Error('No se pudo descargar el informe. El enlace puede haber vencido.');
+
+    let html=await response.text();
+    html=repairSavedPageDependencies(html);
+
+    if(reportBlobUrl) URL.revokeObjectURL(reportBlobUrl);
+    reportBlobUrl=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+    frame.src=reportBlobUrl;
+    frame.classList.remove('hidden');
+    status.classList.add('hidden');
+  }
+
+  async function loadFromEmail(){
+    const src=new URLSearchParams(window.location.search).get('src');
+    if(!src) return false;
+    await renderSignedUrl(src);
+    return true;
+  }
+
+  async function loadFromLoggedInSeller(){
+    const {data:sessionData}=await client.auth.getSession();
+    const user=sessionData.session?.user;
+    if(!user){
+      showError('Inicia sesión','Entra primero a la Agenda Grupo UPS para consultar tu informe.');
+      return;
+    }
+
+    const {data:profile,error}=await client
+      .from('profiles')
+      .select('id,email,full_name,person_code,access_role')
+      .eq('id',user.id)
+      .single();
+
+    if(error||!profile){
+      showError('No se pudo validar tu cuenta','Regresa a la Agenda e intenta nuevamente.');
+      return;
+    }
+
+    const seller=sellerKeyFromProfile(profile);
+    if(!seller){
+      showError('Acceso no disponible','Esta cuenta no tiene un informe individual asignado.');
+      return;
+    }
+
+    const path=`informes-vendedores/${seller}/informe.html`;
+    const {data,error:signedError}=await client.storage
+      .from('weekly-dashboards')
+      .createSignedUrl(path,60*60);
+
+    if(signedError||!data?.signedUrl){
+      console.error(signedError);
+      showError('Informe no disponible','Todavía no hay un informe semanal disponible para esta cuenta.');
+      return;
+    }
+
+    await renderSignedUrl(data.signedUrl);
+  }
+
+  window.addEventListener('beforeunload',()=>{
+    if(reportBlobUrl) URL.revokeObjectURL(reportBlobUrl);
+  });
+
+  (async()=>{
+    try{
+      if(await loadFromEmail()) return;
+      await loadFromLoggedInSeller();
+    }catch(error){
+      console.error(error);
+      showError('No se pudo abrir el informe',error?.message||'Intenta nuevamente más tarde.');
+    }
+  })();
+})();
+</script>
+</body>
+</html>
