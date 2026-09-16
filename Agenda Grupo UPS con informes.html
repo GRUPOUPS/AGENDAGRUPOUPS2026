@@ -313,14 +313,140 @@
   if(weeklyReportAdminOption) weeklyReportAdminOption.addEventListener('click',e=>{e.preventDefault();document.getElementById('weeklyReportAdmin')?.classList.remove('hidden');document.getElementById('weeklyReportAdmin')?.scrollIntoView({behavior:'smooth',block:'start'});});
   if(openWeeklyReportAdminBtn) openWeeklyReportAdminBtn.addEventListener('click',()=>document.getElementById('weeklyReportAdmin')?.classList.add('hidden'));
   if(saveWeeklyReportBtn) saveWeeklyReportBtn.addEventListener('click',async()=>{
-    const seller=document.getElementById('weeklyReportSeller').value;
-    const url=document.getElementById('weeklyReportUrl').value.trim();
-    const msg=document.getElementById('weeklyReportAdminMsg');
-    if(!/^https:\/\//i.test(url)){msg.textContent='Ingresa un enlace https:// válido.';return;}
+  const seller=document.getElementById('weeklyReportSeller').value;
+  const url=document.getElementById('weeklyReportUrl').value.trim();
+  const msg=document.getElementById('weeklyReportAdminMsg');
+
+  if(!/^https:\/\//i.test(url)){
+    msg.textContent='Ingresa un enlace https:// válido.';
+    return;
+  }
+
+  const sellerInfo={
+    eric:{
+      name:'Eric Guzmán',
+      email:'eguzman@grupoups.com'
+    },
+    hector:{
+      name:'Héctor Martínez',
+      email:'hmartinez@grupoups.com'
+    },
+    yoselin:{
+      name:'Yoselin Goncalves',
+      email:'ygoncalves@grupoups.com'
+    }
+  }[seller];
+
+  if(!sellerInfo){
+    msg.textContent='No se encontró el correo del vendedor.';
+    return;
+  }
+
+  saveWeeklyReportBtn.disabled=true;
+  saveWeeklyReportBtn.textContent='Guardando...';
+  msg.textContent='Guardando informe...';
+
+  try{
+    // 1. Guardar el enlace en Supabase
     const key=WEEKLY_REPORT_KEYS[seller];
-    const {error}=await client.from('app_settings').upsert({key,value:url},{onConflict:'key'});
-    msg.textContent=error?'No se pudo guardar el enlace.':'Informe guardado correctamente.';
-  });
+
+    const {error:saveError}=await client
+      .from('app_settings')
+      .upsert(
+        {key,value:url},
+        {onConflict:'key'}
+      );
+
+    if(saveError){
+      console.error(saveError);
+      msg.textContent='No se pudo guardar el enlace.';
+      return;
+    }
+
+    msg.textContent='Informe guardado. Enviando correo...';
+
+    // Evitar que caracteres del enlace dañen el HTML del correo
+    const safeUrl=url
+      .replace(/&/g,'&amp;')
+      .replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+
+    // 2. Enviar correo mediante la Edge Function
+    const {data:emailData,error:emailError}=await client.functions.invoke(
+      'send-agenda-email',
+      {
+        body:{
+          to:sellerInfo.email,
+          subject:'Informe semanal disponible | Grupo UPS',
+          html:`
+            <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#202534;">
+              
+              <h2 style="color:#0b4da2;">
+                Informe semanal
+              </h2>
+
+              <p>
+                Hola ${sellerInfo.name},
+              </p>
+
+              <p>
+                Tu informe semanal ya se encuentra disponible para consulta.
+              </p>
+
+              <p style="margin:28px 0;">
+                <a
+                  href="${safeUrl}"
+                  style="
+                    background:#0b4da2;
+                    color:#ffffff;
+                    padding:12px 20px;
+                    text-decoration:none;
+                    border-radius:8px;
+                    font-weight:bold;
+                    display:inline-block;
+                  "
+                >
+                  Ver informe semanal
+                </a>
+              </p>
+
+              <p>
+                También puedes acceder mediante el siguiente enlace:
+              </p>
+
+              <p>
+                <a href="${safeUrl}">${safeUrl}</a>
+              </p>
+
+              <p style="margin-top:30px;">
+                Saludos cordiales,<br>
+                <strong>Grupo UPS</strong>
+              </p>
+
+            </div>
+          `
+        }
+      }
+    );
+
+    if(emailError){
+      console.error('Error enviando correo:',emailError);
+      msg.textContent='El informe se guardó, pero no se pudo enviar el correo.';
+      return;
+    }
+
+    console.log('Correo enviado:',emailData);
+    msg.textContent=`Informe guardado y enviado a ${sellerInfo.name}.`;
+
+  }catch(error){
+    console.error(error);
+    msg.textContent='Ocurrió un error al procesar el informe.';
+  }finally{
+    saveWeeklyReportBtn.disabled=false;
+    saveWeeklyReportBtn.textContent='Guardar informe';
+  }
+});
 
   loginBtn.addEventListener('click',login);
   password.addEventListener('keydown',e=>{if(e.key==='Enter')login()});
