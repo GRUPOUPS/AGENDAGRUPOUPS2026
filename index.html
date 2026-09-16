@@ -69,13 +69,68 @@
           <h3>Dashboard semanal</h3>
           <p id="dashboardMenuText">Consulta el resumen semanal del equipo comercial.</p>
         </a>
-
+<a id="weeklyReportAdminOption" class="option hidden" href="#">
+  <div class="icon">📎</div>
+  <h3>Informes semanales</h3>
+  <p>Adjunta el enlace vigente y elige a qué vendedor va dirigido.</p>
+</a>
         <a id="callsOption" class="option hidden" href="https://grupoups.github.io/seguimientollamadas/" target="_blank" rel="noopener">
           <div class="icon">☎️</div>
           <h3>Seguimiento Comercial</h3>
           <p>Acceso a llamadas, clientes, cotizaciones y seguimientos comerciales.</p>
         </a>
       </div>
+      <div id="weeklyReportAdmin" class="hidden"
+     style="margin-top:22px;padding:22px;border:1px solid var(--border);border-radius:20px;background:#fff;">
+
+  <h3 style="margin:0 0 8px;color:var(--blue-dark);font-size:22px;">
+    Administrar informes semanales
+  </h3>
+
+  <p style="margin:0 0 18px;color:var(--muted);line-height:1.45;">
+    Selecciona el vendedor y guarda el enlace del informe semanal vigente.
+  </p>
+
+  <div style="display:grid;gap:14px;max-width:760px;">
+
+    <label>
+      <span class="label">Vendedor</span>
+      <select id="weeklyReportSeller"
+              style="width:100%;height:48px;border:1px solid var(--border);border-radius:12px;padding:0 13px;background:#fff;font:inherit;">
+        <option value="eric">Eric Guzmán</option>
+        <option value="hector">Héctor Martínez</option>
+        <option value="yoselin">Yoselin Goncalves</option>
+      </select>
+    </label>
+
+    <label>
+      <span class="label">Enlace del informe</span>
+      <input id="weeklyReportUrl"
+             type="url"
+             placeholder="https://...">
+    </label>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="saveWeeklyReportBtn"
+              class="btn primary"
+              type="button">
+        Guardar informe
+      </button>
+
+      <button id="closeWeeklyReportAdminBtn"
+              class="btn"
+              type="button">
+        Cerrar
+      </button>
+    </div>
+
+    <div id="weeklyReportAdminMsg"
+         class="note"
+         style="text-align:left;min-height:18px;">
+    </div>
+
+  </div>
+</div>
     </section>
   </main>
 </div>
@@ -148,6 +203,8 @@
     setMenuAccess(access);
     const callsOption=document.getElementById('callsOption');
     if(callsOption) callsOption.classList.toggle('hidden',!isCallsShortcutUser(profile));
+    const weeklyReportAdminOption=document.getElementById('weeklyReportAdminOption');
+if(weeklyReportAdminOption) weeklyReportAdminOption.classList.toggle('hidden',!isYorlenis(profile));
     document.getElementById('welcomeName').textContent=`Bienvenido(a), ${profile.full_name||'usuario'}`;
     document.getElementById('welcomeEmail').textContent=profile.email||user.email||'';
     show(menuView);
@@ -240,7 +297,119 @@
     if(error){errorBox.textContent='Correo o contraseña incorrectos.';return}
     await routeUser(data.user);
   }
+const weeklyReportAdminOption=document.getElementById('weeklyReportAdminOption');
+const weeklyReportAdmin=document.getElementById('weeklyReportAdmin');
+const saveWeeklyReportBtn=document.getElementById('saveWeeklyReportBtn');
+const closeWeeklyReportAdminBtn=document.getElementById('closeWeeklyReportAdminBtn');
 
+if(weeklyReportAdminOption){
+  weeklyReportAdminOption.addEventListener('click',e=>{
+    e.preventDefault();
+    weeklyReportAdmin?.classList.remove('hidden');
+    weeklyReportAdmin?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+}
+
+if(closeWeeklyReportAdminBtn){
+  closeWeeklyReportAdminBtn.addEventListener('click',()=>{
+    weeklyReportAdmin?.classList.add('hidden');
+  });
+}
+
+if(saveWeeklyReportBtn){
+  saveWeeklyReportBtn.addEventListener('click',async()=>{
+    const seller=document.getElementById('weeklyReportSeller').value;
+    const url=document.getElementById('weeklyReportUrl').value.trim();
+    const msg=document.getElementById('weeklyReportAdminMsg');
+
+    if(!/^https:\/\//i.test(url)){
+      msg.textContent='Ingresa un enlace https:// válido.';
+      return;
+    }
+
+    const sellerInfo={
+      eric:{
+        name:'Eric Guzmán',
+        email:'eguzman@grupoups.com'
+      },
+      hector:{
+        name:'Héctor Martínez',
+        email:'hmartinez@grupoups.com'
+      },
+      yoselin:{
+        name:'Yoselin Goncalves',
+        email:'ygoncalves@grupoups.com'
+      }
+    }[seller];
+
+    if(!sellerInfo){
+      msg.textContent='No se encontró el vendedor.';
+      return;
+    }
+
+    saveWeeklyReportBtn.disabled=true;
+    saveWeeklyReportBtn.textContent='Guardando...';
+
+    try{
+      const key=`weekly_report_${seller}`;
+
+      const {error:saveError}=await client
+        .from('app_settings')
+        .upsert({key,value:url},{onConflict:'key'});
+
+      if(saveError){
+        console.error(saveError);
+        msg.textContent='No se pudo guardar el informe.';
+        return;
+      }
+
+      msg.textContent='Informe guardado. Enviando correo...';
+
+      const {error:emailError}=await client.functions.invoke(
+        'send-agenda-email',
+        {
+          body:{
+            to:sellerInfo.email,
+            subject:'Informe semanal disponible | Grupo UPS',
+            html:`
+              <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;">
+                <h2 style="color:#0b4da2;">Informe semanal</h2>
+
+                <p>Hola ${sellerInfo.name},</p>
+
+                <p>Tu informe semanal ya se encuentra disponible para consulta.</p>
+
+                <p style="margin:28px 0;">
+                  <a href="${url}"
+                     style="background:#0b4da2;color:#fff;padding:12px 20px;text-decoration:none;border-radius:8px;font-weight:bold;">
+                    Ver informe semanal
+                  </a>
+                </p>
+
+                <p>Saludos cordiales,<br><strong>Grupo UPS</strong></p>
+              </div>
+            `
+          }
+        }
+      );
+
+      if(emailError){
+        console.error(emailError);
+        msg.textContent='El informe se guardó, pero no se pudo enviar el correo.';
+        return;
+      }
+
+      msg.textContent=`Informe guardado y enviado a ${sellerInfo.name}.`;
+
+    }catch(error){
+      console.error(error);
+      msg.textContent='Ocurrió un error al procesar el informe.';
+    }finally{
+      saveWeeklyReportBtn.disabled=false;
+      saveWeeklyReportBtn.textContent='Guardar informe';
+    }
+  });
+}
   loginBtn.addEventListener('click',login);
   password.addEventListener('keydown',e=>{if(e.key==='Enter')login()});
   email.addEventListener('keydown',e=>{if(e.key==='Enter')password.focus()});
