@@ -123,11 +123,12 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
           <label for="dashboardFile">Archivo HTML</label>
           <input type="file" id="dashboardFile" accept=".html,.htm,text/html">
           <div class="file-help">Sube solo el archivo HTML. Al abrirlo, la app reemplaza automáticamente referencias locales comunes de Chart.js y Font Awesome.</div>
+          <div class="file-help"><strong>Prueba:</strong> al publicar, la notificación se enviará únicamente a info@grupoups.com.</div>
         </div>
       </div>
       <div class="status" id="saveStatus"></div>
       <div class="actions" style="margin-top:10px;justify-content:flex-start">
-        <button class="btn primary" id="saveBtn" type="button">Subir dashboard</button>
+        <button class="btn primary" id="saveBtn" type="button">Subir y enviar notificación</button>
         <button class="btn" id="cancelUploadBtn" type="button">Cancelar</button>
       </div>
     </section>
@@ -501,7 +502,7 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     );
     if(uploadError){
       console.error(uploadError);
-      btn.disabled=false;btn.textContent='Subir dashboard';
+      btn.disabled=false;btn.textContent='Subir y enviar notificación';
       status.classList.add('error');status.textContent='No se pudo subir el archivo HTML.';return;
     }
 
@@ -511,14 +512,14 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     if(dbError){
       console.error('dashboard_register_html:',dbError);
       await client.storage.from('weekly-dashboards').remove([path]);
-      btn.disabled=false;btn.textContent='Subir dashboard';
+      btn.disabled=false;btn.textContent='Subir y enviar notificación';
       status.classList.add('error');status.textContent='No se pudo registrar el dashboard: '+(dbError.message||'Error de Supabase');return;
     }
 
     status.textContent='Dashboard publicado. Enviando correo de prueba...';
     const noticeSent=await sendDashboardNotice(start,end);
 
-    btn.disabled=false;btn.textContent='Subir dashboard';
+    btn.disabled=false;btn.textContent='Subir y enviar notificación';
     status.classList.add(noticeSent?'ok':'error');
     status.textContent=noticeSent
       ? 'Dashboard publicado y correo de prueba enviado a info@grupoups.com.'
