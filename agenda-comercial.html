@@ -376,7 +376,7 @@ Ver semana del asesor</button>
   function visiblePersonIds(){
     const code=currentProfile?.person_code; const role=currentProfile?.access_role;
     if(role==='management_viewer'||role==='reception_staff'||code==='yorlenis'||code==='jennifer')return PEOPLE.map(p=>p.id);
-    if(code==='yoselin')return ['eric','hector','yoselin'];
+    if(code==='yoselin')return ['eric','hector','yoselin','yorlenis','jennifer'];
     return code?[code]:[];
   }
   function canSeeTeam(){return visiblePersonIds().length>1}
@@ -527,7 +527,7 @@ Ver semana del asesor</button>
   function normalized(s){s=String(s||'pending').toLowerCase();return ['completed','culminada'].includes(s)?'completed':['cancelled','canceled','cancelada'].includes(s)?'cancelled':'pending'}
   function location(row){return row.location_preset==='other'?(row.location_custom||'Otra ubicación'):(row.location_preset||row.location_custom||'')}
   function setStatus(text,state='synced'){status.textContent=text;status.dataset.state=state}
-  function allowedIds(){const p=profile();const code=p?.person_code;const role=p?.access_role;if(role==='management_viewer'||role==='reception_staff'||code==='yorlenis'||code==='jennifer')return PEOPLE.map(x=>x.id);if(code==='yoselin')return ['eric','hector','yoselin'];return code?[code]:[]}
+  function allowedIds(){const p=profile();const code=p?.person_code;const role=p?.access_role;if(role==='management_viewer'||role==='reception_staff'||code==='yorlenis'||code==='jennifer')return PEOPLE.map(x=>x.id);if(code==='yoselin')return ['eric','hector','yoselin','yorlenis','jennifer'];:[]}
   function canSeeTeam(){return allowedIds().length>1}
   function canOpenDaily(personId){return allowedIds().includes(personId)}
   function visiblePeople(){const allowed=PEOPLE.filter(p=>allowedIds().includes(p.id));const selected=fixedPerson||filter.value;return selected&&selected!=='all'?allowed.filter(p=>p.id===selected):allowed;}
