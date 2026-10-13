@@ -500,12 +500,12 @@ Ver semana del asesor</button>
   const teamBtn=document.getElementById('weeklyViewBtn');
   const personBtn=document.getElementById('personWeeklyBtn');
   const PEOPLE=[
-    {id:'eric',name:'Eric Guzmán',role:'Asesor comercial'},
-    {id:'hector',name:'Héctor Martínez',role:'Asesor comercial'},
-    {id:'yoselin',name:'Yoselin Goncalves',role:'Gerente de ventas'},
-    {id:'yorlenis',name:'Yorlenis Londoño',role:'Asistente de Gerencia'},
-    {id:'jennifer',name:'Jennifer Pineda',role:'Ejecutiva de Desarrollo de Negocios'}
-  ];
+  {id:'eric',name:'Eric Guzmán',role:'Asesor comercial'},
+  {id:'hector',name:'Héctor Martínez',role:'Asesor comercial'},
+  {id:'yoselin',name:'Yoselin Goncalves',role:'Gerente de ventas'},
+  {id:'yorlenis',name:'Yorlenis Londoño',role:'Asistente de Gerencia'},
+  {id:'jennifer',name:'Jennifer Pineda',role:'Ejecutiva de Desarrollo de Negocios'}
+];
   let weekStart=getMonday(new Date());
   let fixedPerson='';
   let channel=null;
@@ -527,7 +527,26 @@ Ver semana del asesor</button>
   function normalized(s){s=String(s||'pending').toLowerCase();return ['completed','culminada'].includes(s)?'completed':['cancelled','canceled','cancelada'].includes(s)?'cancelled':'pending'}
   function location(row){return row.location_preset==='other'?(row.location_custom||'Otra ubicación'):(row.location_preset||row.location_custom||'')}
   function setStatus(text,state='synced'){status.textContent=text;status.dataset.state=state}
-  function allowedIds(){const p=profile();const code=p?.person_code;const role=p?.access_role;if(role==='management_viewer'||role==='reception_staff'||code==='yorlenis'||code==='jennifer')return PEOPLE.map(x=>x.id);if(code==='yoselin')return ['eric','hector','yoselin','yorlenis','jennifer'];:[]}
+  function allowedIds(){
+  const p=profile();
+  const code=p?.person_code;
+  const role=p?.access_role;
+
+  if(
+    role==='management_viewer' ||
+    role==='reception_staff' ||
+    code==='yorlenis' ||
+    code==='jennifer'
+  ){
+    return PEOPLE.map(x=>x.id);
+  }
+
+  if(code==='yoselin'){
+    return ['eric','hector','yoselin','yorlenis','jennifer'];
+  }
+
+  return code ? [code] : [];
+}
   function canSeeTeam(){return allowedIds().length>1}
   function canOpenDaily(personId){return allowedIds().includes(personId)}
   function visiblePeople(){const allowed=PEOPLE.filter(p=>allowedIds().includes(p.id));const selected=fixedPerson||filter.value;return selected&&selected!=='all'?allowed.filter(p=>p.id===selected):allowed;}
