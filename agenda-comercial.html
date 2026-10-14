@@ -500,6 +500,46 @@ Ver semana del asesor</button>
   async function changeDate(date){currentDate=date;await loadDate();if(selectedPerson){const p=PEOPLE.find(x=>x.id===selectedPerson);document.getElementById('heroSubtitle').textContent=`Actividades correspondientes al ${formatDate(currentDate)}.`}}
   function startRealtime(){if(realtimeChannel)supabaseClient.removeChannel(realtimeChannel);realtimeChannel=supabaseClient.channel('commercial-calendar-live').on('postgres_changes',{event:'*',schema:'public',table:'commercial_calendar'},payload=>{if(Date.now()<suppressRealtimeUntil)return;const date=payload.new?.agenda_date||payload.old?.agenda_date;if(date!==currentDate)return;const active=document.activeElement;if(active&&['INPUT','TEXTAREA','SELECT'].includes(active.tagName))return;clearTimeout(reloadTimer);reloadTimer=setTimeout(()=>loadDate().catch(console.error),350)}).subscribe()}
   function showLogin(message=''){currentUser=null;currentProfile=null;appShell.classList.add('hidden');authScreen.classList.remove('hidden');authError.textContent=message;loginPassword.value='';if(realtimeChannel){supabaseClient.removeChannel(realtimeChannel);realtimeChannel=null}}
+function showDailyMotivation(){
+  const box=document.getElementById('dailyMotivation');
+  const title=document.getElementById('dailyMotivationTitle');
+  const text=document.getElementById('dailyMotivationText');
+
+  if(!box || !title || !text || !currentProfile)return;
+
+  const code=currentProfile.person_code;
+  const name=currentProfile.full_name || 'Equipo';
+
+  const testPhrases={
+    eric:[
+      'Cada seguimiento de hoy puede acercarte a un cierre mañana.',
+      'La constancia comercial convierte oportunidades en resultados.'
+    ],
+    hector:[
+      'Cada gestión suma cuando se trabaja con constancia.',
+      'Las oportunidades crecen cuando se les da el seguimiento correcto.'
+    ],
+    jennifer:[
+      'Cada nuevo contacto puede abrir una nueva oportunidad de negocio.',
+      'Construir relaciones hoy crea oportunidades para mañana.'
+    ],
+    yoselin:[
+      'Liderar también es mantener al equipo enfocado en avanzar.',
+      'El seguimiento constante transforma objetivos en resultados.'
+    ],
+    yorlenis:[
+      'Cada pendiente bien gestionado acerca al equipo a un mejor resultado.',
+      'Organizar, coordinar y dar seguimiento también es hacer avanzar al equipo.'
+    ]
+  };
+
+  const managementPhrases=[
+    'Una buena visión se fortalece con información clara y seguimiento constante.',
+    'Los grandes resultados comienzan con dirección, seguimiento y constancia.'
+  ];
+
+  let phrases=[];
+
   if(currentProfile.access_role==='management_viewer'){
     phrases=managementPhrases;
   }else{
@@ -510,8 +550,7 @@ Ver semana del asesor</button>
 
   const today=new Date();
   const dayNumber=Math.floor(
-    new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime()
-    / 86400000
+    new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime()/86400000
   );
 
   const phrase=phrases[dayNumber % phrases.length];
