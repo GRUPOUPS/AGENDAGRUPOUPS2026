@@ -50,6 +50,33 @@ main{max-width:1600px;margin:auto;padding:24px}
 .hero-row{display:grid;grid-template-columns:1.25fr 1fr;gap:24px;align-items:center}
 .hero h2{font-size:30px;margin:0;color:var(--blue-950)}
 .hero p{color:var(--muted);margin:10px 0 0;max-width:760px;line-height:1.5}
+  .daily-motivation{
+  margin-top:14px;
+  padding:14px 16px;
+  border:1px solid #d8e2f0;
+  border-radius:14px;
+  background:linear-gradient(135deg,#f7fbff,#eef5ff);
+  box-shadow:0 4px 14px rgba(11,79,156,.06);
+  max-width:720px;
+}
+
+.daily-motivation-title{
+  font-size:13px;
+  font-weight:900;
+  color:#083d82;
+  margin-bottom:5px;
+}
+
+.daily-motivation-text{
+  font-size:14px;
+  line-height:1.45;
+  color:#344054;
+  font-style:italic;
+}
+
+.daily-motivation.hidden{
+  display:none;
+}
 .date-panel{display:grid;grid-template-columns:auto minmax(180px,1fr) auto auto;gap:10px;align-items:end}
 .field-label{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:800;margin-bottom:7px;display:block}
 .date-field input{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;color:var(--ink)}
@@ -232,6 +259,10 @@ textarea{min-height:47px;resize:vertical}
 <div>
 <h2 id="heroTitle">Agenda comercial del equipo</h2>
 <p id="heroSubtitle">Seleccione a un vendedor para revisar y editar sus actividades del día.</p>
+<div id="dailyMotivation" class="daily-motivation hidden">
+  <div class="daily-motivation-title" id="dailyMotivationTitle"></div>
+  <div class="daily-motivation-text" id="dailyMotivationText"></div>
+</div>
 </div>
 <div class="date-panel">
 <button class="btn" id="prevDay" title="Día anterior">
@@ -469,7 +500,28 @@ Ver semana del asesor</button>
   async function changeDate(date){currentDate=date;await loadDate();if(selectedPerson){const p=PEOPLE.find(x=>x.id===selectedPerson);document.getElementById('heroSubtitle').textContent=`Actividades correspondientes al ${formatDate(currentDate)}.`}}
   function startRealtime(){if(realtimeChannel)supabaseClient.removeChannel(realtimeChannel);realtimeChannel=supabaseClient.channel('commercial-calendar-live').on('postgres_changes',{event:'*',schema:'public',table:'commercial_calendar'},payload=>{if(Date.now()<suppressRealtimeUntil)return;const date=payload.new?.agenda_date||payload.old?.agenda_date;if(date!==currentDate)return;const active=document.activeElement;if(active&&['INPUT','TEXTAREA','SELECT'].includes(active.tagName))return;clearTimeout(reloadTimer);reloadTimer=setTimeout(()=>loadDate().catch(console.error),350)}).subscribe()}
   function showLogin(message=''){currentUser=null;currentProfile=null;appShell.classList.add('hidden');authScreen.classList.remove('hidden');authError.textContent=message;loginPassword.value='';if(realtimeChannel){supabaseClient.removeChannel(realtimeChannel);realtimeChannel=null}}
-  async function enterApp(user){currentUser=user;currentUserEmail.textContent=user.email||'Usuario';try{await loadProfiles()}catch(error){console.error(error);await supabaseClient.auth.signOut();showLogin(error.message||'No se pudo validar la cuenta.');return}if(currentProfile.access_role==='reception_only'){window.location.replace('agenda-recepcion.html');return}authScreen.classList.add('hidden');appShell.classList.remove('hidden');startRealtime();await loadDate();if(canSeeTeam())openTeam();else openPerson(currentProfile.person_code);if(readOnlyCommercial)setSync('Modo consulta · Sincronizado con Supabase.','synced');window.grupoUpsCommercialProfile=currentProfile;window.grupoUpsCommercialProfiles=profiles;window.grupoUpsCommercialPeople=PEOPLE;window.grupoUpsCommercialContext={getSelectedPerson:()=>selectedPerson,getCurrentDate:()=>currentDate,openPerson,changeDate,canSeeTeam:()=>canSeeTeam()};window.dispatchEvent(new CustomEvent('grupo-ups-commercial-ready',{detail:{user,currentProfile,profiles}}))}
+  if(currentProfile.access_role==='management_viewer'){
+    phrases=managementPhrases;
+  }else{
+    phrases=testPhrases[code] || [
+      'Cada día representa una nueva oportunidad para avanzar.'
+    ];
+  }
+
+  const today=new Date();
+  const dayNumber=Math.floor(
+    new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime()
+    / 86400000
+  );
+
+  const phrase=phrases[dayNumber % phrases.length];
+
+  title.textContent=`Buen día, ${name.split(' ')[0]} 👋`;
+  text.textContent=`“${phrase}”`;
+
+  box.classList.remove('hidden');
+}
+  async function enterApp(user){currentUser=user;currentUserEmail.textContent=user.email||'Usuario';try{await loadProfiles()}catch(error){console.error(error);await supabaseClient.auth.signOut();showLogin(error.message||'No se pudo validar la cuenta.');return}if(currentProfile.access_role==='reception_only'){window.location.replace('agenda-recepcion.html');return}authScreen.classList.add('hidden');appShell.classList.remove('hidden');showDailyMotivation();startRealtime();await loadDate();if(canSeeTeam())openTeam();else openPerson(currentProfile.person_code);if(readOnlyCommercial)setSync('Modo consulta · Sincronizado con Supabase.','synced');window.grupoUpsCommercialProfile=currentProfile;window.grupoUpsCommercialProfiles=profiles;window.grupoUpsCommercialPeople=PEOPLE;window.grupoUpsCommercialContext={getSelectedPerson:()=>selectedPerson,getCurrentDate:()=>currentDate,openPerson,changeDate,canSeeTeam:()=>canSeeTeam()};window.dispatchEvent(new CustomEvent('grupo-ups-commercial-ready',{detail:{user,currentProfile,profiles}}))}
   async function login(){const email=loginEmail.value.trim();const password=loginPassword.value;authError.textContent='';if(!email||!password){authError.textContent='Escriba el correo y la contraseña.';return}loginButton.disabled=true;loginButton.textContent='Ingresando...';const{data,error}=await supabaseClient.auth.signInWithPassword({email,password});loginButton.disabled=false;loginButton.textContent='Iniciar sesión';if(error){authError.textContent='Correo o contraseña incorrectos.';return}await enterApp(data.user)}
   async function logout(){await supabaseClient.auth.signOut();window.location.replace('index.html')}
 
