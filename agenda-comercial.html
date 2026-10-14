@@ -510,6 +510,10 @@ function showDailyMotivation(){
 
   const code=currentProfile.person_code;
   const name=currentProfile.full_name || 'Equipo';
+  if(currentProfile.access_role==='reception_staff' || currentProfile.access_role==='reception_only'){
+  box.classList.add('hidden');
+  return;
+}
 
   const allPhrases=window.GRUPOUPS_MOTIVATIONAL_PHRASES || {};
 
