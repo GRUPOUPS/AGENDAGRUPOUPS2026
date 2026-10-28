@@ -1868,7 +1868,7 @@
 <div class="clock-card">
 <span>Hora actual</span>
 <strong id="liveClock">2:15:51 p. m.</strong>
-<small id="nextTaskText">Ahora: Ingreso de agenda diaria en Salesforce · hasta 2:30 p. m..</small>
+<small id="nextTaskText" style="display:none;"></small>
 </div>
 <div class="filter-area">
 <label for="checklistSearch">
@@ -1892,11 +1892,11 @@
 <div aria-live="polite" class="filter-note" id="filterResultText">Mostrando 2 de 2 tareas.</div>
 </div>
 </section>
-<div class="layout">
+<div class="layout" style="grid-template-columns: 1fr;">
 <section class="panel">
 <div class="panel-header">
 <div>
-<h2>Horario editable</h2>
+<section class="panel" style="display:none;">
 </div>
 <div class="actions">
 <button class="button" id="sortScheduleButton" type="button">Ordenar por hora</button>
