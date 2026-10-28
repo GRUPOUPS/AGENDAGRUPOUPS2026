@@ -564,7 +564,8 @@ Ver semana del asesor</button>
     { id:'hector', name:'Héctor Martínez', initials:'HM', role:'Asesor comercial' },
     { id:'yoselin', name:'Yoselin Goncalves', initials:'YG', role:'Gerente de ventas' },
     { id:'yorlenis', name:'Yorlenis Londoño', initials:'YL', role:'Asistente de Gerencia' },
-    { id:'jennifer', name:'Jennifer Pineda', initials:'JP', role:'Ejecutiva de Desarrollo de Negocios' }
+    { id:'jennifer', name:'Jennifer Pineda', initials:'JP', role:'Ejecutiva de Desarrollo de Negocios'},
+    { id:'sebastian', name:'Sebastián Rodríguez', initials:'SR', role:'Recepción' }
   ];
   const LOCATION_OPTIONS = ['Oficina Santa María','En campo / Cliente','Home Office','Virtual / Teams / Zoom'];
   const VOICE_BUCKET='assistant-voice-notes';
@@ -1621,12 +1622,6 @@ function showDailyMotivation(){
   if(!box || !title || !text || !currentProfile)return;
 
   const name=currentProfile.full_name || 'Equipo';
-
-  /* Recepción no recibe frases. */
-  if(currentProfile.access_role==='reception_staff' || currentProfile.access_role==='reception_only'){
-    box.classList.add('hidden');
-    return;
-  }
 
   /*
     Ciclo solicitado por Gerencia:
