@@ -775,7 +775,7 @@ Ver semana del asesor</button>
     window.GUPS.notes.bind(wrap,{
       activityById:noteActivity,
       activityIdOfNote:window.GUPS.notes.activityIdOfNote,
-      onChange:async()=>{await loadNotesForDay();decorateNotes();showToast('Nota guardada');}
+      onChange:async()=>{await loadNotesForDay();decorateNotes();showToast('Notas actualizadas');}
     });
   }
   async function renderNotices(){

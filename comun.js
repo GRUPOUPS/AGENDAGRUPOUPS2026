@@ -107,6 +107,7 @@
   .gn-note.gn-focus{border:2px solid #f2b705;box-shadow:0 8px 24px rgba(242,183,5,.25)}
   .gn-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#7a5000}
   .gn-new{padding:2px 8px;border-radius:999px;background:#b42318;color:#fff;font-size:10px;font-weight:800;letter-spacing:.03em}
+  .gn-del{margin-left:auto;border:0;background:none;color:#b42318;font:700 11px Inter,Segoe UI,Arial,sans-serif;cursor:pointer;text-decoration:underline;padding:2px 4px}
   .gn-text{font-size:14px;line-height:1.45;color:#172033;white-space:pre-wrap}
   .gn-reply{margin-left:26px;background:#eef4fd;border:1px solid #c9d8ea;border-radius:12px;padding:9px 12px;display:flex;flex-direction:column;gap:3px;max-width:794px}
   .gn-reply .gn-meta{color:#073b80}
@@ -151,10 +152,11 @@
     if (!error) state.reads = new Set((data || []).map(r => r.note_id));
   }
 
+  let loadSeq = 0;
   async function loadForActivities(ids) {
-    state.byActivity = new Map();
+    const seq = ++loadSeq;
     ids = [...new Set((ids || []).filter(Boolean))];
-    if (!ids.length || !state.me) return state.byActivity;
+    if (!ids.length || !state.me) { state.byActivity = new Map(); return state.byActivity; }
     const c = getClient();
     const all = [];
     for (let i = 0; i < ids.length; i += 150) {
@@ -162,13 +164,16 @@
       if (error) { console.warn('Notas:', error.message); return state.byActivity; }
       all.push(...(data || []));
     }
-    const tops = all.filter(n => !n.parent_id);
-    tops.forEach(n => { n.replies = all.filter(r => r.parent_id === n.id); });
+    const unique = [...new Map(all.map(n => [n.id, n])).values()];
+    const tops = unique.filter(n => !n.parent_id);
+    tops.forEach(n => { n.replies = unique.filter(r => r.parent_id === n.id); });
+    const map = new Map();
     tops.forEach(n => {
-      if (!state.byActivity.has(n.activity_id)) state.byActivity.set(n.activity_id, []);
-      state.byActivity.get(n.activity_id).push(n);
+      if (!map.has(n.activity_id)) map.set(n.activity_id, []);
+      map.get(n.activity_id).push(n);
     });
     await loadReads();
+    if (seq === loadSeq) state.byActivity = map;   // solo la carga más reciente cuenta
     return state.byActivity;
   }
 
@@ -200,14 +205,14 @@
       const newTop = isUnreadForMe(n);
       const isFocus = n.id === state.focusNoteId;
       parts.push(`<div class="gn-note${isFocus ? ' gn-focus' : ''}" data-gn-note="${esc(n.id)}">
-        <span class="gn-meta">Nota de ${esc(n.author_name || 'Usuario')} · ${esc(whenText(n.created_at))}${newTop ? '<span class="gn-new">NUEVA</span>' : ''}</span>
+        <span class="gn-meta">Nota de ${esc(n.author_name || 'Usuario')} · ${esc(whenText(n.created_at))}${newTop ? '<span class="gn-new">NUEVA</span>' : ''}${n.author_id === me.id ? `<button type="button" class="gn-del" data-gn-del="${esc(n.id)}">Eliminar</button>` : ''}</span>
         <span class="gn-text">${esc(n.body)}</span></div>`);
       n.replies.forEach(r => {
         const mine = n.author_id === me.id;
         const newR = mine && r.author_id !== me.id && !state.reads.has(r.id);
         const rf = r.id === state.focusNoteId;
         parts.push(`<div class="gn-reply${rf ? ' gn-focus' : ''}" data-gn-note="${esc(r.id)}">
-          <span class="gn-meta">Respuesta de ${esc(r.author_name || 'Usuario')} · ${esc(whenText(r.created_at))}${newR ? '<span class="gn-new">NUEVA</span>' : ''}</span>
+          <span class="gn-meta">Respuesta de ${esc(r.author_name || 'Usuario')} · ${esc(whenText(r.created_at))}${newR ? '<span class="gn-new">NUEVA</span>' : ''}${r.author_id === me.id ? `<button type="button" class="gn-del" data-gn-del="${esc(r.id)}">Eliminar</button>` : ''}</span>
           <span class="gn-text">${esc(r.body)}</span></div>`);
       });
       if (canReplyNote(me, n) && !n.replies.some(r => r.author_id === me.id)) {
@@ -240,6 +245,13 @@
       const { error } = await getClient().from('activity_notes').insert({ parent_id: id, activity_id: opts.activityIdOfNote(id), body });
       if (error) { console.error(error); btn.disabled = false; btn.textContent = 'Enviar respuesta'; if (err) err.textContent = 'No se pudo enviar. Intente de nuevo.'; return; }
       await markRead([id]);
+      await opts.onChange();
+    }));
+    container.querySelectorAll('[data-gn-del]').forEach(btn => btn.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar esta nota? Si tiene respuestas, también se eliminan.')) return;
+      btn.disabled = true;
+      const { error } = await getClient().from('activity_notes').delete().eq('id', btn.dataset.gnDel);
+      if (error) { console.error(error); btn.disabled = false; alert('No se pudo eliminar la nota.'); return; }
       await opts.onChange();
     }));
     // Las notas quedan como NUEVAS hasta que la persona toca el aviso o responde.
