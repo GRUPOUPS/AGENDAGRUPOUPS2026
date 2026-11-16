@@ -94,6 +94,20 @@ table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
 .links a{text-decoration:none;display:flex;flex-direction:column;gap:2px;padding:18px 20px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--navy)}
 .links a.main{background:var(--navy);color:#fff;border-color:var(--navy)}
 .links b{font-size:15px}.links span{font-size:13px;color:var(--muted)}.links a.main span{color:#d6e4f7}
+.week-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;background:#f5f9ff;border:1px solid var(--line);border-radius:14px}
+.week-nav select{min-height:44px;padding:0 12px;border:1px solid #c9d8ea;border-radius:10px;background:#fff;color:var(--navy);font:700 14px Inter,Segoe UI,Arial,sans-serif;flex:0 1 240px}
+.week-range{flex:1 1 260px;text-align:center;font-weight:800;color:var(--navy);font-size:16px}
+.ev-loc{font-size:11px;color:var(--muted)}
+.ev-actions{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-top:3px}
+.ev-open{min-height:28px;padding:0 9px;border:0;border-radius:8px;background:#e9f2ff;color:var(--blue);font:800 11px Inter,Segoe UI,Arial,sans-serif;cursor:pointer}
+.pbox{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.pbox-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 16px;background:#f2f7fe;border-bottom:1px solid var(--line)}
+.pbox-head .pc-name{font-size:17px}
+.pbox-counts{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
+.pbox-counts span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--soft)}
+.pbox-empty{padding:16px;color:var(--muted);font-size:14px}
+.pboxes{display:flex;flex-direction:column;gap:14px;padding:16px}
+table.d.compact{min-width:900px}
 .loading{padding:60px;text-align:center;color:var(--navy);font-weight:800}
 @media(max-width:700px){.top-in{padding:12px 16px}main{padding:18px 14px 40px}.hero h1{font-size:26px}}
 </style>
@@ -154,10 +168,14 @@ table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
   <section class="sec" aria-labelledby="s2">
     <div class="sec-head">
       <h2 id="s2">2. Calendario semanal del equipo</h2>
-      <div class="week-tools">
-        <label for="weekFilter" class="hint" style="font-weight:600">Mostrar</label>
-        <select id="weekFilter"><option value="">Todo el equipo</option></select>
-      </div>
+      <span class="hint">Planificación semanal del equipo, de lunes a viernes.</span>
+    </div>
+    <div class="week-nav">
+      <button class="btn" type="button" id="weekPrev">‹ Semana anterior</button>
+      <button class="btn" type="button" id="weekNow">Semana actual</button>
+      <span class="week-range" id="weekRange" aria-live="polite"></span>
+      <button class="btn" type="button" id="weekNext">Semana siguiente ›</button>
+      <select id="weekFilter" aria-label="Filtrar persona"><option value="">Todo el equipo</option></select>
     </div>
     <div class="week"><div class="wgrid" id="weekGrid"></div></div>
     <div class="legend">
@@ -197,31 +215,41 @@ table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
   let me = null, profiles = [], byCode = new Map(), byId = new Map();
   let date = G.isoDate(new Date());
   let selected = null;            // código de persona, 'all' o null
-  let weekRows = [], backlog = [];
+  let weekAnchor = date;        // fecha dentro de la semana que muestra el calendario
+  let dayRows = [], weekRows = [], backlog = [];
 
   const $ = id => document.getElementById(id);
   const todayIso = () => G.isoDate(new Date());
   const st = s => ST[s] || ST.pending;
   const loc = r => r.location_preset === 'other' ? (r.location_custom || 'Otra ubicación') : (r.location_preset || r.location_custom || 'Oficina Santa María');
   function monday(iso) { const d = G.parseISO(iso); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return d; }
-  function weekDays() { const m = monday(date); return [0, 1, 2, 3, 4].map(i => { const d = new Date(m); d.setDate(m.getDate() + i); return G.isoDate(d); }); }
-  function rowsOf(code, iso) { const p = byCode.get(code); if (!p) return []; return weekRows.filter(r => r.owner_id === p.id && r.agenda_date === iso).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time))); }
+  function daysOf(anchor) { const m = monday(anchor); return [0, 1, 2, 3, 4].map(i => { const d = new Date(m); d.setDate(m.getDate() + i); return G.isoDate(d); }); }
+  function weekDays() { return daysOf(date); }
+  function calDays() { return daysOf(weekAnchor); }
+  function allRows() { const m = new Map(); [...dayRows, ...weekRows].forEach(r => m.set(r.id, r)); return [...m.values()]; }
+  function rowsOf(code, iso) { const p = byCode.get(code); if (!p) return []; return allRows().filter(r => r.owner_id === p.id && r.agenda_date === iso).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time))); }
+  function findRow(id) { return allRows().find(x => x.id === id); }
   function act(r) { const p = byId.get(r.owner_id); return { id: r.id, date: r.agenda_date, start: r.start_time, end: r.end_time, company: r.company_contact, activity: r.activity, ownerName: p?.full_name || '' }; }
 
   /* ------------------------------------------------------------ carga */
-  async function loadData() {
-    const days = weekDays();
-    const from = days[0] < date ? days[0] : date, to = days[4] > date ? days[4] : date;
+  async function loadDay() {
     const back = new Date(G.parseISO(date)); back.setDate(back.getDate() - 30);
-    const [w, b] = await Promise.all([
-      client.from('commercial_calendar').select('*').gte('agenda_date', from).lte('agenda_date', to).order('start_time', { ascending: true }),
+    const [d, b] = await Promise.all([
+      client.from('commercial_calendar').select('*').eq('agenda_date', date).order('start_time', { ascending: true }),
       client.from('commercial_calendar').select('id,owner_id,agenda_date,status,result').gte('agenda_date', G.isoDate(back)).lt('agenda_date', date)
     ]);
+    if (d.error) throw d.error;
+    dayRows = d.data || [];
+    backlog = (b.data || []).filter(r => r.status !== 'cancelled' && !String(r.result || '').trim());
+  }
+  async function loadWeek() {
+    const days = calDays();
+    const w = await client.from('commercial_calendar').select('*').gte('agenda_date', days[0]).lte('agenda_date', days[4]).order('start_time', { ascending: true });
     if (w.error) throw w.error;
     weekRows = w.data || [];
-    backlog = (b.data || []).filter(r => r.status !== 'cancelled' && !String(r.result || '').trim());
-    await G.notes.loadForActivities(weekRows.map(r => r.id));
   }
+  async function loadNotes() { await G.notes.loadForActivities(allRows().map(r => r.id)); }
+  async function loadData() { await Promise.all([loadDay(), loadWeek()]); await loadNotes(); }
 
   /* ---------------------------------------------------------- dibujo */
   function renderHeader() {
@@ -262,41 +290,58 @@ table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
     $('cards').querySelectorAll('[data-person]').forEach(b => b.addEventListener('click', () => { selected = selected === b.dataset.person ? null : b.dataset.person; renderSection1(); }));
   }
 
+  function rowsTable(rows) {
+    if (!rows.length) return '<div class="pbox-empty">No tiene actividades registradas para este día.</div>';
+    return `<div class="tbl-wrap"><table class="d compact"><thead><tr><th>Hora</th><th>Empresa / contacto</th><th>Actividad</th><th>Ubicación</th><th>Resultado</th><th>Estado</th><th style="min-width:280px">Notas</th></tr></thead><tbody>${rows.map(r => {
+      const s = st(r.status), owner = byId.get(r.owner_id);
+      return `<tr data-row-id="${esc(r.id)}">
+        <td class="t-time">${esc(G.ampm(r.start_time))}<br><span class="hint">${esc(G.ampm(r.end_time))}</span></td>
+        <td><b>${esc(r.company_contact || 'Sin empresa / contacto')}</b></td>
+        <td>${esc(r.activity || '')}</td>
+        <td class="hint">${esc(loc(r))}</td>
+        <td>${esc(r.result || 'Sin resultado todavía.')}</td>
+        <td><span class="st ${s[1]}">${s[0]}</span></td>
+        <td>${G.notes.threadHtml(r.id, owner)}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+  }
+  function countsHtml(rows) {
+    const done = rows.filter(r => r.status === 'completed').length, pend = rows.filter(r => (r.status || 'pending') === 'pending').length;
+    const pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+    return `<span>${pl(rows.length, 'actividad', 'actividades')}</span><span style="color:var(--ok)">${pl(done, 'culminada', 'culminadas')}</span><span style="color:var(--warn)">${pl(pend, 'pendiente', 'pendientes')}</span>`;
+  }
+
   function renderDetail() {
     const box = $('detail');
     if (!selected) { box.innerHTML = ''; return; }
     const all = selected === 'all';
-    let rows = all ? PEOPLE.flatMap(p => rowsOf(p.code, date)) : rowsOf(selected, date);
-    rows = rows.slice().sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
-    const p = all ? null : PEOPLE.find(x => x.code === selected);
-    const title = all ? 'Todo el departamento' : p.name;
-    const sub = all ? 'Las actividades de las 6 personas, en orden de hora' : p.role;
-    const done = rows.filter(r => r.status === 'completed').length, pend = rows.filter(r => (r.status || 'pending') === 'pending').length;
+    const list = all ? PEOPLE.filter(p => byCode.has(p.code)) : PEOPLE.filter(p => p.code === selected);
+    const every = list.flatMap(p => rowsOf(p.code, date));
+    const done = every.filter(r => r.status === 'completed').length, pend = every.filter(r => (r.status || 'pending') === 'pending').length;
+    const title = all ? 'Todo el departamento' : list[0].name;
+    const sub = all ? 'Un recuadro por persona, con sus actividades del día' : list[0].role;
     box.innerHTML = `<div class="detail">
       <div class="d-head"><div><h3>Agenda | ${esc(title)}</h3><span class="hint">${esc(G.longDate(date))} · ${esc(sub)}</span></div>
       <button class="btn" type="button" id="closeDetail">Cerrar agenda</button></div>
-      <div class="d-stats"><div><b style="color:var(--navy)">${rows.length}</b><span>Actividades</span></div><div><b style="color:var(--ok)">${done}</b><span>Culminadas</span></div><div><b style="color:var(--warn)">${pend}</b><span>Pendientes</span></div></div>
-      <div class="tbl-wrap"><table class="d"><thead><tr><th>Hora</th>${all ? '<th>Persona</th>' : ''}<th>Empresa / contacto</th><th>Actividad</th><th>Ubicación</th><th>Resultado</th><th>Estado</th><th style="min-width:280px">Notas</th></tr></thead>
-      <tbody>${rows.length ? rows.map(r => {
-        const s = st(r.status), owner = byId.get(r.owner_id), pp = PEOPLE.find(x => x.code === owner?.person_code);
-        return `<tr data-row-id="${esc(r.id)}">
-          <td class="t-time">${esc(G.ampm(r.start_time))}<br><span class="hint">${esc(G.ampm(r.end_time))}</span></td>
-          ${all ? `<td><b style="color:var(--navy)">${esc(pp?.name || owner?.full_name || '')}</b><br><span class="hint">${esc(pp?.role || '')}</span></td>` : ''}
-          <td><b>${esc(r.company_contact || 'Sin empresa / contacto')}</b></td>
-          <td>${esc(r.activity || '')}</td>
-          <td class="hint">${esc(loc(r))}</td>
-          <td>${esc(r.result || 'Sin resultado todavía.')}</td>
-          <td><span class="st ${s[1]}">${s[0]}</span></td>
-          <td>${G.notes.threadHtml(r.id, owner)}</td></tr>`;
-      }).join('') : `<tr><td colspan="${all ? 8 : 7}" class="empty">No hay actividades registradas para este día.</td></tr>`}</tbody></table></div></div>`;
+      <div class="d-stats"><div><b style="color:var(--navy)">${every.length}</b><span>Actividades</span></div><div><b style="color:var(--ok)">${done}</b><span>Culminadas</span></div><div><b style="color:var(--warn)">${pend}</b><span>Pendientes</span></div></div>
+      ${all
+        ? `<div class="pboxes">${list.map(p => {
+            const rows = rowsOf(p.code, date);
+            return `<section class="pbox" aria-label="Agenda de ${esc(p.name)}">
+              <div class="pbox-head"><span class="avatar">${p.initials}</span><span><span class="pc-name">${esc(p.name)}</span><br><span class="pc-role">${esc(p.role)}</span></span>
+              <span class="pbox-counts">${countsHtml(rows)}</span></div>
+              ${rowsTable(rows)}</section>`;
+          }).join('')}</div>`
+        : rowsTable(rowsOf(list[0].code, date))}
+    </div>`;
     $('closeDetail').addEventListener('click', () => { selected = null; renderSection1(); });
-    G.notes.bind(box, { activityById: id => { const r = weekRows.find(x => x.id === id); return r ? act(r) : null; }, activityIdOfNote: G.notes.activityIdOfNote, onChange: refreshNotes });
+    G.notes.bind(box, { activityById: id => { const r = findRow(id); return r ? act(r) : null; }, activityIdOfNote: G.notes.activityIdOfNote, onChange: refreshNotes });
   }
 
   function renderSection1() { renderHeader(); renderCards(); renderDetail(); }
 
   function renderWeek() {
-    const days = weekDays(), filter = $('weekFilter').value;
+    const days = calDays(), filter = $('weekFilter').value;
+    renderWeekNav();
     const names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
     const list = PEOPLE.filter(p => byCode.has(p.code) && (!filter || p.code === filter));
     let html = '<div class="wh first"><b>Persona</b></div>' + days.map((d, i) => `<div class="wh"><b>${names[i]}</b><small>${G.parseISO(d).getDate()} de ${new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(G.parseISO(d))}</small></div>`).join('');
@@ -307,27 +352,51 @@ table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
         html += `<div class="wc${d === todayIso() ? ' today' : ''}">${rows.length ? rows.map(r => {
           const s = st(r.status), notes = G.notes.state.byActivity.get(r.id) || [];
           const tag = s[2] === 'c' ? 'background:#eaf8ef;color:#15803d' : s[2] === 'x' ? 'background:#fff0ee;color:#b42318' : 'background:#fff5d8;color:#7a5000';
-          return `<div class="ev ${s[2]}"><div class="ev-top"><span class="ev-time">${esc(G.ampm(r.start_time))}</span><span class="ev-tag" style="${tag}">${s[0]}</span></div>
-            <span class="ev-co">${esc(r.company_contact || 'Sin empresa / contacto')}</span><span class="ev-ac">${esc(r.activity || '')}</span>
+          return `<div class="ev ${s[2]}"><div class="ev-top"><span class="ev-time">${esc(G.ampm(r.start_time))} – ${esc(G.ampm(r.end_time))}</span><span class="ev-tag" style="${tag}">${s[0]}</span></div>
+            <span class="ev-co">${esc(r.company_contact || 'Sin empresa / contacto')}</span><span class="ev-ac">${esc(r.activity || 'Sin actividad indicada')}</span><span class="ev-loc">${esc(loc(r))}</span>
             ${notes.map(n => `<span class="ev-note"><b style="color:#7a5000">${esc(G.firstName(n.author_name))}:</b> ${esc(n.body)}</span>${n.replies.map(x => `<span class="ev-reply"><b style="color:#073b80">${esc(G.firstName(x.author_name))}:</b> ${esc(x.body)}</span>`).join('')}`).join('')}
-            <button type="button" class="ev-add" data-gn-add="${esc(r.id)}">+ Nota</button></div>`;
+            <div class="ev-actions"><button type="button" class="ev-add" data-gn-add="${esc(r.id)}">+ Nota</button><button type="button" class="ev-open" data-open-day="${esc(r.id)}">Ver en agenda diaria</button></div></div>`;
         }).join('') : '<span class="w-empty">Sin actividades</span>'}</div>`;
       });
     });
     $('weekGrid').innerHTML = html;
+    $('weekGrid').querySelectorAll('[data-open-day]').forEach(b => b.addEventListener('click', async () => {
+      const r = findRow(b.dataset.openDay); if (!r) return;
+      selected = byId.get(r.owner_id)?.person_code || 'all';
+      const keep = weekAnchor;
+      date = r.agenda_date; await loadDay(); await loadNotes(); weekAnchor = keep; renderSection1();
+      setTimeout(() => {
+        const tr = document.querySelector(`#detail tr[data-row-id="${CSS.escape(r.id)}"]`);
+        if (tr) { tr.classList.add('gn-focus-row'); tr.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => tr.classList.remove('gn-focus-row'), 2500); }
+      }, 150);
+    }));
     $('weekGrid').querySelectorAll('[data-gn-add]').forEach(b => b.addEventListener('click', () => {
-      const r = weekRows.find(x => x.id === b.dataset.gnAdd); if (r) G.notes.openComposer(act(r), refreshNotes);
+      const r = findRow(b.dataset.gnAdd); if (r) G.notes.openComposer(act(r), refreshNotes);
     }));
   }
 
-  async function refreshNotes() { await G.notes.loadForActivities(weekRows.map(r => r.id)); renderDetail(); renderWeek(); renderNotices(); }
+  async function refreshNotes() { await loadNotes(); renderDetail(); renderWeek(); renderNotices(); }
+
+  function weekLabel(days) {
+    const a = G.parseISO(days[0]), b = G.parseISO(days[4]);
+    const m = d => new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(d);
+    return a.getMonth() === b.getMonth() ? `Semana del ${a.getDate()} al ${b.getDate()} de ${m(b)}` : `Semana del ${a.getDate()} de ${m(a)} al ${b.getDate()} de ${m(b)}`;
+  }
+  function renderWeekNav() {
+    const d = calDays(), a = G.parseISO(d[0]), b = G.parseISO(d[4]);
+    const f = x => new Intl.DateTimeFormat('es-PA', { day: 'numeric', month: 'long' }).format(x);
+    $('weekRange').textContent = `${f(a)} – ${f(b)} de ${b.getFullYear()}`;
+    $('weekNow').disabled = calDays()[0] === daysOf(todayIso())[0];
+  }
+  async function changeWeek(anchor) { weekAnchor = anchor; await loadWeek(); await loadNotes(); renderWeek(); }
+  function shiftWeek(n) { const d = G.parseISO(weekAnchor); d.setDate(d.getDate() + 7 * n); changeWeek(G.isoDate(d)); }
 
   async function renderNotices() {
     const items = await G.notes.unreadNotices(byId);
     $('gnNotices').innerHTML = G.notes.noticesHtml(items, i => `panel-gerencia.html?nota=${encodeURIComponent(i.note.id)}`);
   }
 
-  async function changeDate(iso) { date = iso; await loadData(); renderSection1(); renderWeek(); }
+  async function changeDate(iso) { date = iso; weekAnchor = iso; await loadData(); renderSection1(); renderWeek(); }
 
   async function openNoteFromLink() {
     const id = new URLSearchParams(location.search).get('nota');
@@ -376,6 +445,9 @@ table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
   $('nextDay').addEventListener('click', () => { const d = G.parseISO(date); d.setDate(d.getDate() + 1); changeDate(G.isoDate(d)); });
   $('todayBtn').addEventListener('click', () => changeDate(todayIso()));
   $('weekFilter').addEventListener('change', renderWeek);
+  $('weekPrev').addEventListener('click', () => shiftWeek(-1));
+  $('weekNext').addEventListener('click', () => shiftWeek(1));
+  $('weekNow').addEventListener('click', () => changeWeek(todayIso()));
   $('logoutBtn').addEventListener('click', async () => { await client.auth.signOut(); location.replace('index.html'); });
   start().catch(e => { console.error(e); $('loading').textContent = 'No se pudo cargar el panel. Actualice la página.'; });
 })();
