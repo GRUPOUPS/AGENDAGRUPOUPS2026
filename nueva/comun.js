@@ -242,15 +242,7 @@
       await markRead([id]);
       await opts.onChange();
     }));
-    // marcar como vistas las notas que se muestran (después de un momento)
-    const visible = [];
-    container.querySelectorAll('[data-gn-activity]').forEach(w => {
-      (state.byActivity.get(w.dataset.gnActivity) || []).forEach(n => {
-        if (isUnreadForMe(n)) visible.push(n.id);
-        if (n.author_id === state.me.id) n.replies.forEach(r => { if (r.author_id !== state.me.id) visible.push(r.id); });
-      });
-    });
-    if (visible.length) setTimeout(() => markRead(visible), 4000);
+    // Las notas quedan como NUEVAS hasta que la persona toca el aviso o responde.
   }
 
   function activityIdOfNote(id) {
