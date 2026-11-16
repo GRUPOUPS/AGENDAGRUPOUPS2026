@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Gerencia · Agenda Grupo UPS</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root{--blue:#0b4da2;--navy:#073b80;--ink:#172033;--muted:#667085;--soft:#475467;--line:#d8e2f0;--bg:#f4f7fb;--ok:#15803d;--okbg:#eaf8ef;--warn:#7a5000;--warnbg:#fff5d8;--warndot:#c98a00;--bad:#b42318;--badbg:#fff0ee}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}
+.hidden{display:none!important}
+a{color:var(--blue)}
+.btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:1px solid #c9d8ea;border-radius:10px;background:#fff;color:var(--navy);font:700 14px Inter,Segoe UI,Arial,sans-serif;text-decoration:none;cursor:pointer}
+.btn.icon{width:46px;padding:0}
+header.top{background:#fff;border-bottom:1px solid var(--line)}
+.top-in{max-width:1280px;margin:0 auto;padding:14px 28px;display:flex;flex-wrap:wrap;align-items:center;gap:16px}
+.top-in img{height:58px;width:auto}
+.spacer{flex:1 1 auto}
+.mail{font-size:13px;color:var(--muted)}
+main{max-width:1280px;margin:0 auto;padding:26px 28px 60px;display:flex;flex-direction:column;gap:28px}
+.hero{background:linear-gradient(180deg,#f3f8ff,#eaf2fd);border:1px solid var(--line);border-radius:22px;padding:24px 26px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:22px}
+.hero-l{flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.hero h1{margin:0;font-size:32px;font-weight:800;color:var(--navy)}
+.hero-sub{font-size:15px;color:var(--soft)}
+.phrase{margin-top:6px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 17px;display:flex;flex-direction:column;gap:5px;max-width:740px}
+.phrase-t{font-size:13px;font-weight:800;color:var(--navy)}
+.phrase-x{font-size:18px;font-weight:800;line-height:1.4}
+.date-box{flex:1 1 360px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.date-box label{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--soft)}
+.date-row{display:flex;align-items:center;gap:8px}
+.date-row input{flex:1 1 auto;min-width:0;height:46px;padding:0 14px;border:1px solid #c9d8ea;border-radius:10px;background:#fff;font:600 15px Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}
+h2{margin:0;font-size:21px;font-weight:800}
+.sec{display:flex;flex-direction:column;gap:14px}
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.hint{font-size:13px;color:var(--muted)}
+.dept{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-radius:16px;color:#fff;background:var(--navy);border:3px solid var(--navy);font:inherit;cursor:pointer;text-align:left}
+.dept.on{border-color:#f2b705;box-shadow:0 8px 24px rgba(7,59,128,.25)}
+.dept-l{display:flex;align-items:center;gap:14px}
+.dept-ico{width:48px;height:48px;flex:none;border-radius:14px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center}
+.dept-t{font-size:18px;font-weight:800}.dept-s{font-size:14px;opacity:.9}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.pcard{font:inherit;text-align:left;cursor:pointer;width:100%;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;color:var(--ink)}
+.pcard.on{border:2px solid var(--blue);box-shadow:0 8px 24px rgba(11,77,162,.15)}
+.pc-top{display:flex;align-items:center;gap:12px}
+.avatar{width:44px;height:44px;flex:none;border-radius:12px;background:#e8f0fb;color:var(--navy);font-weight:800;display:flex;align-items:center;justify-content:center}
+.pc-name{font-weight:800;font-size:16px;color:var(--navy)}.pc-role{font-size:13px;color:var(--muted)}
+.badge{flex:none;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.badge i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.b-ok{background:var(--okbg);color:var(--ok)}.b-ok i{background:var(--ok)}
+.b-warn{background:var(--warnbg);color:var(--warn)}.b-warn i{background:var(--warndot)}
+.b-bad{background:var(--badbg);color:var(--bad)}.b-bad i{background:var(--bad)}
+.mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mini div{background:var(--bg);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:1px}
+.mini b{font-size:21px}.mini span{font-size:12px;font-weight:600;color:var(--soft)}
+.cta{display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;background:#e8f0fb;font-weight:700;font-size:14px;color:var(--navy)}
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--soft)}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.detail{background:#fff;border:2px solid var(--blue);border-radius:16px;overflow:hidden}
+.d-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.d-head h3{margin:0;font-size:20px;color:var(--navy)}
+.d-stats{display:flex;flex-wrap:wrap;gap:28px;padding:14px 20px;background:#f8fbff;border-bottom:1px solid var(--line)}
+.d-stats b{display:block;font-size:24px}.d-stats span{font-size:13px;font-weight:600;color:var(--soft)}
+.tbl-wrap{overflow-x:auto}
+table.d{width:100%;min-width:980px;border-collapse:collapse;font-size:14px}
+table.d th{text-align:left;background:#f0f5fc;padding:11px 12px;font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.03em}
+table.d td{padding:12px;border-top:1px solid #e6ecf5;vertical-align:top}
+.t-time{font-weight:800;color:var(--blue);white-space:nowrap}
+.st{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.st-c{background:var(--okbg);color:var(--ok)}.st-p{background:var(--warnbg);color:var(--warn)}.st-x{background:var(--badbg);color:var(--bad)}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+.week-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.week-tools select{min-height:44px;padding:0 12px;border:1px solid #c9d8ea;border-radius:10px;background:#fff;color:var(--navy);font:700 14px Inter,Segoe UI,Arial,sans-serif}
+.week{background:#fff;border:1px solid var(--line);border-radius:16px;overflow-x:auto}
+.wgrid{display:grid;grid-template-columns:170px repeat(5,minmax(180px,1fr));min-width:1100px}
+.wh{background:var(--blue);color:#fff;padding:11px 10px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.wh.first{background:var(--navy);text-align:left}
+.wh b{font-size:14px}.wh small{font-size:12px;color:#d6e4f7}
+.wp{background:#f2f7fe;border-top:1px solid #d9e3f0;padding:12px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.wp b{font-size:14px;color:var(--navy)}.wp small{font-size:12px;color:var(--muted)}
+.wc{border-top:1px solid #d9e3f0;border-left:1px solid #d9e3f0;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:86px}
+.wc.today{background:#fbfdff}
+.ev{display:flex;flex-direction:column;gap:3px;padding:8px 9px;border:1px solid #d6e2f0;border-left:4px solid var(--warndot);border-radius:10px;background:#fff}
+.ev.c{border-left-color:var(--ok)}.ev.x{border-left-color:var(--bad)}
+.ev-top{display:flex;justify-content:space-between;gap:6px;align-items:center}
+.ev-time{font-size:11px;font-weight:800;color:var(--blue)}
+.ev-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
+.ev-co{font-size:12px;font-weight:800;line-height:1.3}.ev-ac{font-size:12px;color:var(--soft);line-height:1.3}
+.ev-note{margin-top:3px;font-size:11px;line-height:1.35;background:#fffaeb;border:1px solid #f3dc9b;border-radius:8px;padding:5px 7px}
+.ev-reply{margin-left:8px;font-size:11px;line-height:1.35;background:#eef4fd;border:1px solid #c9d8ea;border-radius:8px;padding:5px 7px}
+.ev-add{margin-top:3px;align-self:flex-start;min-height:28px;padding:0 9px;border:1px dashed var(--blue);border-radius:8px;background:#f3f8ff;color:var(--blue);font:700 11px Inter,Segoe UI,Arial,sans-serif;cursor:pointer}
+.w-empty{margin:auto;font-size:12px;color:var(--muted)}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.links a{text-decoration:none;display:flex;flex-direction:column;gap:2px;padding:18px 20px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--navy)}
+.links a.main{background:var(--navy);color:#fff;border-color:var(--navy)}
+.links b{font-size:15px}.links span{font-size:13px;color:var(--muted)}.links a.main span{color:#d6e4f7}
+.week-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;background:#f5f9ff;border:1px solid var(--line);border-radius:14px}
+.week-nav select{min-height:44px;padding:0 12px;border:1px solid #c9d8ea;border-radius:10px;background:#fff;color:var(--navy);font:700 14px Inter,Segoe UI,Arial,sans-serif;flex:0 1 240px}
+.week-range{flex:1 1 260px;text-align:center;font-weight:800;color:var(--navy);font-size:16px}
+.ev-loc{font-size:11px;color:var(--muted)}
+.ev-actions{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-top:3px}
+.ev-open{min-height:28px;padding:0 9px;border:0;border-radius:8px;background:#e9f2ff;color:var(--blue);font:800 11px Inter,Segoe UI,Arial,sans-serif;cursor:pointer}
+.pbox{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.pbox-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 16px;background:#f2f7fe;border-bottom:1px solid var(--line)}
+.pbox-head .pc-name{font-size:17px}
+.pbox-counts{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
+.pbox-counts span{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--soft)}
+.pbox-empty{padding:16px;color:var(--muted);font-size:14px}
+.pboxes{display:flex;flex-direction:column;gap:14px;padding:16px}
+table.d.compact{min-width:900px}
+.loading{padding:60px;text-align:center;color:var(--navy);font-weight:800}
+@media(max-width:700px){.top-in{padding:12px 16px}main{padding:18px 14px 40px}.hero h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div id="loading" class="loading">Cargando Panel de Gerencia…</div>
+<div id="app" class="hidden">
+<header class="top">
+  <div class="top-in">
+    <img src="logo-grupoups.png" alt="Grupo UPS · Creando sinergia">
+    <a class="btn" href="index.html">← Volver a mis accesos</a>
+    <div class="spacer"></div>
+    <span class="mail" id="meEmail"></span>
+    <button class="btn" id="logoutBtn" type="button">Cerrar sesión</button>
+  </div>
+</header>
+<main>
+  <div id="gnNotices"></div>
+
+  <section class="hero">
+    <div class="hero-l">
+      <h1>Panel de Gerencia</h1>
+      <span class="hero-sub" id="heroSub"></span>
+      <div class="phrase"><span class="phrase-t" id="phraseT"></span><span class="phrase-x" id="phraseX"></span></div>
+    </div>
+    <div class="date-box">
+      <label for="datePicker">FECHA DEL CALENDARIO</label>
+      <div class="date-row">
+        <button class="btn icon" id="prevDay" type="button" aria-label="Día anterior">‹</button>
+        <input type="date" id="datePicker">
+        <button class="btn" id="todayBtn" type="button">Hoy</button>
+        <button class="btn icon" id="nextDay" type="button" aria-label="Día siguiente">›</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="s1">
+    <div class="sec-head">
+      <h2 id="s1">1. Agenda del equipo de ventas de hoy</h2>
+      <span class="hint">Toque una tarjeta para ver la agenda de esa persona (solo lectura).</span>
+    </div>
+    <button type="button" class="dept" id="deptBtn" aria-pressed="false">
+      <span class="dept-l">
+        <span class="dept-ico" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"></path></svg></span>
+        <span><span class="dept-t" id="deptTitle">Agenda del departamento de hoy</span><br><span class="dept-s">Todas las actividades del equipo, en orden de hora.</span></span>
+      </span>
+      <span style="font-weight:800" id="deptCta">Ver agenda completa →</span>
+    </button>
+    <div class="cards" id="cards"></div>
+    <div class="legend">
+      <span><i style="background:#15803d"></i>Al día: sin pendientes atrasados</span>
+      <span><i style="background:#c98a00"></i>Revisar: tiene actividades anteriores sin resultado</span>
+      <span><i style="background:#b42318"></i>Atención: actividades sin resultado de hace más de 3 días</span>
+    </div>
+    <div id="detail"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="s2">
+    <div class="sec-head">
+      <h2 id="s2">2. Calendario semanal del equipo</h2>
+      <span class="hint">Planificación semanal del equipo, de lunes a viernes.</span>
+    </div>
+    <div class="week-nav">
+      <button class="btn" type="button" id="weekPrev">‹ Semana anterior</button>
+      <button class="btn" type="button" id="weekNow">Semana actual</button>
+      <span class="week-range" id="weekRange" aria-live="polite"></span>
+      <button class="btn" type="button" id="weekNext">Semana siguiente ›</button>
+      <select id="weekFilter" aria-label="Filtrar persona"><option value="">Todo el equipo</option></select>
+    </div>
+    <div class="week"><div class="wgrid" id="weekGrid"></div></div>
+    <div class="legend">
+      <span><i style="background:#15803d;border-radius:2px;width:4px;height:16px"></i>Culminada: ya tiene resultado</span>
+      <span><i style="background:#c98a00;border-radius:2px;width:4px;height:16px"></i>Pendiente: aún sin resultado</span>
+      <span><i style="background:#b42318;border-radius:2px;width:4px;height:16px"></i>Cancelada</span>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="s3">
+    <h2 id="s3">3. Informes y accesos</h2>
+    <div class="links">
+      <a class="main" href="dashboard-semanal.html?ver=ultimo"><b>Ver dashboard de esta semana</b><span>El último dashboard publicado</span></a>
+      <a href="agenda-recepcion.html"><b>Agenda de recepción</b><span>Visitas, documentos y llegada del personal</span></a>
+      <a href="https://gupsprojectsapp.vercel.app/" target="_blank" rel="noopener"><b>GUPS Projects</b><span>Proyectos y avances</span></a>
+    </div>
+  </section>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="comun.js"></script>
+<script>
+(() => {
+  'use strict';
+  const G = window.GUPS, esc = G.esc;
+  const client = G.getClient();
+  const PEOPLE = [
+    { code: 'eric', name: 'Eric Guzmán', initials: 'EG', role: 'Asesor comercial' },
+    { code: 'hector', name: 'Héctor Martínez', initials: 'HM', role: 'Asesor comercial' },
+    { code: 'yoselin', name: 'Yoselin Goncalves', initials: 'YG', role: 'Gerente de ventas' },
+    { code: 'jennifer', name: 'Jennifer Pineda', initials: 'JP', role: 'Asistente de ventas' },
+    { code: 'yorlenis', name: 'Yorlenis Londoño', initials: 'YL', role: 'Asistente de Gerencia' },
+    { code: 'sebastian', name: 'Sebastián Rodríguez', initials: 'SR', role: 'Recepción' }
+  ];
+  const ST = { completed: ['Culminada', 'st-c', 'c'], cancelled: ['Cancelada', 'st-x', 'x'], pending: ['Pendiente', 'st-p', 'p'] };
+  let me = null, profiles = [], byCode = new Map(), byId = new Map();
+  let date = G.isoDate(new Date());
+  let selected = null;            // código de persona, 'all' o null
+  let weekAnchor = date;        // fecha dentro de la semana que muestra el calendario
+  let dayRows = [], weekRows = [], backlog = [];
+
+  const $ = id => document.getElementById(id);
+  const todayIso = () => G.isoDate(new Date());
+  const st = s => ST[s] || ST.pending;
+  const loc = r => r.location_preset === 'other' ? (r.location_custom || 'Otra ubicación') : (r.location_preset || r.location_custom || 'Oficina Santa María');
+  function monday(iso) { const d = G.parseISO(iso); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return d; }
+  function daysOf(anchor) { const m = monday(anchor); return [0, 1, 2, 3, 4].map(i => { const d = new Date(m); d.setDate(m.getDate() + i); return G.isoDate(d); }); }
+  function weekDays() { return daysOf(date); }
+  function calDays() { return daysOf(weekAnchor); }
+  function allRows() { const m = new Map(); [...dayRows, ...weekRows].forEach(r => m.set(r.id, r)); return [...m.values()]; }
+  function rowsOf(code, iso) { const p = byCode.get(code); if (!p) return []; return allRows().filter(r => r.owner_id === p.id && r.agenda_date === iso).sort((a, b) => String(a.start_time).localeCompare(String(b.start_time))); }
+  function findRow(id) { return allRows().find(x => x.id === id); }
+  function act(r) { const p = byId.get(r.owner_id); return { id: r.id, date: r.agenda_date, start: r.start_time, end: r.end_time, company: r.company_contact, activity: r.activity, ownerName: p?.full_name || '' }; }
+
+  /* ------------------------------------------------------------ carga */
+  async function loadDay() {
+    const back = new Date(G.parseISO(date)); back.setDate(back.getDate() - 30);
+    const [d, b] = await Promise.all([
+      client.from('commercial_calendar').select('*').eq('agenda_date', date).order('start_time', { ascending: true }),
+      client.from('commercial_calendar').select('id,owner_id,agenda_date,status,result').gte('agenda_date', G.isoDate(back)).lt('agenda_date', date)
+    ]);
+    if (d.error) throw d.error;
+    dayRows = d.data || [];
+    backlog = (b.data || []).filter(r => r.status !== 'cancelled' && !String(r.result || '').trim());
+  }
+  async function loadWeek() {
+    const days = calDays();
+    const w = await client.from('commercial_calendar').select('*').gte('agenda_date', days[0]).lte('agenda_date', days[4]).order('start_time', { ascending: true });
+    if (w.error) throw w.error;
+    weekRows = w.data || [];
+  }
+  async function loadNotes() { await G.notes.loadForActivities(allRows().map(r => r.id)); }
+  async function loadData() { await Promise.all([loadDay(), loadWeek()]); await loadNotes(); }
+
+  /* ---------------------------------------------------------- dibujo */
+  function renderHeader() {
+    const isToday = date === todayIso();
+    const days = weekDays();
+    $('heroSub').textContent = `Así va el equipo en la semana del ${G.longDate(days[0])} al ${G.longDate(days[4])}.`;
+    $('datePicker').value = date;
+    $('s1').textContent = isToday ? '1. Agenda del equipo de ventas de hoy' : `1. Agenda del equipo de ventas del ${G.longDate(date)}`;
+    $('deptTitle').textContent = isToday ? 'Agenda del departamento de hoy' : `Agenda del departamento del ${G.longDate(date)}`;
+    const on = selected === 'all';
+    $('deptBtn').classList.toggle('on', on);
+    $('deptBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('deptCta').textContent = on ? 'Mostrando ↓' : 'Ver agenda completa →';
+  }
+
+  function statusOf(code) {
+    const p = byCode.get(code); if (!p) return ['Al día', 'b-ok'];
+    const mine = backlog.filter(r => r.owner_id === p.id);
+    if (!mine.length) return ['Al día', 'b-ok'];
+    const limit = new Date(G.parseISO(date)); limit.setDate(limit.getDate() - 3);
+    return mine.some(r => G.parseISO(r.agenda_date) < limit) ? ['Atención', 'b-bad'] : ['Revisar', 'b-warn'];
+  }
+
+  function renderCards() {
+    $('cards').innerHTML = PEOPLE.filter(p => byCode.has(p.code)).map(p => {
+      const rows = rowsOf(p.code, date);
+      const done = rows.filter(r => r.status === 'completed').length;
+      const pend = rows.filter(r => (r.status || 'pending') === 'pending').length;
+      const fol = rows.filter(r => r.followup_attended_at).length;
+      const [stx, scl] = statusOf(p.code);
+      const on = selected === p.code;
+      return `<button type="button" class="pcard${on ? ' on' : ''}" data-person="${p.code}" aria-pressed="${on}">
+        <span class="pc-top"><span class="avatar">${p.initials}</span><span style="flex:1;min-width:0"><span class="pc-name">${esc(p.name)}</span><br><span class="pc-role">${esc(p.role)}</span></span><span class="badge ${scl}"><i></i>${stx}</span></span>
+        <span class="mini"><div><b>${rows.length}</b><span>Actividades</span></div><div><b>${done}</b><span>Con resultado</span></div><div><b>${pend}</b><span>Pendientes</span></div><div><b>${fol}</b><span>Seguimientos atendidos</span></div></span>
+        <span class="cta">${on ? 'Mostrando su agenda ↓' : (date === todayIso() ? 'Ver agenda de hoy' : 'Ver agenda de este día')}</span>
+      </button>`;
+    }).join('');
+    $('cards').querySelectorAll('[data-person]').forEach(b => b.addEventListener('click', () => { selected = selected === b.dataset.person ? null : b.dataset.person; renderSection1(); }));
+  }
+
+  function rowsTable(rows) {
+    if (!rows.length) return '<div class="pbox-empty">No tiene actividades registradas para este día.</div>';
+    return `<div class="tbl-wrap"><table class="d compact"><thead><tr><th>Hora</th><th>Empresa / contacto</th><th>Actividad</th><th>Ubicación</th><th>Resultado</th><th>Estado</th><th style="min-width:280px">Notas</th></tr></thead><tbody>${rows.map(r => {
+      const s = st(r.status), owner = byId.get(r.owner_id);
+      return `<tr data-row-id="${esc(r.id)}">
+        <td class="t-time">${esc(G.ampm(r.start_time))}<br><span class="hint">${esc(G.ampm(r.end_time))}</span></td>
+        <td><b>${esc(r.company_contact || 'Sin empresa / contacto')}</b></td>
+        <td>${esc(r.activity || '')}</td>
+        <td class="hint">${esc(loc(r))}</td>
+        <td>${esc(r.result || 'Sin resultado todavía.')}</td>
+        <td><span class="st ${s[1]}">${s[0]}</span></td>
+        <td>${G.notes.threadHtml(r.id, owner)}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+  }
+  function countsHtml(rows) {
+    const done = rows.filter(r => r.status === 'completed').length, pend = rows.filter(r => (r.status || 'pending') === 'pending').length;
+    const pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+    return `<span>${pl(rows.length, 'actividad', 'actividades')}</span><span style="color:var(--ok)">${pl(done, 'culminada', 'culminadas')}</span><span style="color:var(--warn)">${pl(pend, 'pendiente', 'pendientes')}</span>`;
+  }
+
+  function renderDetail() {
+    const box = $('detail');
+    if (!selected) { box.innerHTML = ''; return; }
+    const all = selected === 'all';
+    const list = all ? PEOPLE.filter(p => byCode.has(p.code)) : PEOPLE.filter(p => p.code === selected);
+    const every = list.flatMap(p => rowsOf(p.code, date));
+    const done = every.filter(r => r.status === 'completed').length, pend = every.filter(r => (r.status || 'pending') === 'pending').length;
+    const title = all ? 'Todo el departamento' : list[0].name;
+    const sub = all ? 'Un recuadro por persona, con sus actividades del día' : list[0].role;
+    box.innerHTML = `<div class="detail">
+      <div class="d-head"><div><h3>Agenda | ${esc(title)}</h3><span class="hint">${esc(G.longDate(date))} · ${esc(sub)}</span></div>
+      <button class="btn" type="button" id="closeDetail">Cerrar agenda</button></div>
+      <div class="d-stats"><div><b style="color:var(--navy)">${every.length}</b><span>Actividades</span></div><div><b style="color:var(--ok)">${done}</b><span>Culminadas</span></div><div><b style="color:var(--warn)">${pend}</b><span>Pendientes</span></div></div>
+      ${all
+        ? `<div class="pboxes">${list.map(p => {
+            const rows = rowsOf(p.code, date);
+            return `<section class="pbox" aria-label="Agenda de ${esc(p.name)}">
+              <div class="pbox-head"><span class="avatar">${p.initials}</span><span><span class="pc-name">${esc(p.name)}</span><br><span class="pc-role">${esc(p.role)}</span></span>
+              <span class="pbox-counts">${countsHtml(rows)}</span></div>
+              ${rowsTable(rows)}</section>`;
+          }).join('')}</div>`
+        : rowsTable(rowsOf(list[0].code, date))}
+    </div>`;
+    $('closeDetail').addEventListener('click', () => { selected = null; renderSection1(); });
+    G.notes.bind(box, { activityById: id => { const r = findRow(id); return r ? act(r) : null; }, activityIdOfNote: G.notes.activityIdOfNote, onChange: refreshNotes });
+  }
+
+  function renderSection1() { renderHeader(); renderCards(); renderDetail(); }
+
+  function renderWeek() {
+    const days = calDays(), filter = $('weekFilter').value;
+    renderWeekNav();
+    const names = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const list = PEOPLE.filter(p => byCode.has(p.code) && (!filter || p.code === filter));
+    let html = '<div class="wh first"><b>Persona</b></div>' + days.map((d, i) => `<div class="wh"><b>${names[i]}</b><small>${G.parseISO(d).getDate()} de ${new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(G.parseISO(d))}</small></div>`).join('');
+    list.forEach(p => {
+      html += `<div class="wp"><b>${esc(p.name)}</b><small>${esc(p.role)}</small></div>`;
+      days.forEach(d => {
+        const rows = rowsOf(p.code, d);
+        html += `<div class="wc${d === todayIso() ? ' today' : ''}">${rows.length ? rows.map(r => {
+          const s = st(r.status), notes = G.notes.state.byActivity.get(r.id) || [];
+          const tag = s[2] === 'c' ? 'background:#eaf8ef;color:#15803d' : s[2] === 'x' ? 'background:#fff0ee;color:#b42318' : 'background:#fff5d8;color:#7a5000';
+          return `<div class="ev ${s[2]}"><div class="ev-top"><span class="ev-time">${esc(G.ampm(r.start_time))} – ${esc(G.ampm(r.end_time))}</span><span class="ev-tag" style="${tag}">${s[0]}</span></div>
+            <span class="ev-co">${esc(r.company_contact || 'Sin empresa / contacto')}</span><span class="ev-ac">${esc(r.activity || 'Sin actividad indicada')}</span><span class="ev-loc">${esc(loc(r))}</span>
+            ${notes.map(n => `<span class="ev-note"><b style="color:#7a5000">${esc(G.firstName(n.author_name))}:</b> ${esc(n.body)}</span>${n.replies.map(x => `<span class="ev-reply"><b style="color:#073b80">${esc(G.firstName(x.author_name))}:</b> ${esc(x.body)}</span>`).join('')}`).join('')}
+            <div class="ev-actions"><button type="button" class="ev-add" data-gn-add="${esc(r.id)}">+ Nota</button><button type="button" class="ev-open" data-open-day="${esc(r.id)}">Ver en agenda diaria</button></div></div>`;
+        }).join('') : '<span class="w-empty">Sin actividades</span>'}</div>`;
+      });
+    });
+    $('weekGrid').innerHTML = html;
+    $('weekGrid').querySelectorAll('[data-open-day]').forEach(b => b.addEventListener('click', async () => {
+      const r = findRow(b.dataset.openDay); if (!r) return;
+      selected = byId.get(r.owner_id)?.person_code || 'all';
+      const keep = weekAnchor;
+      date = r.agenda_date; await loadDay(); await loadNotes(); weekAnchor = keep; renderSection1();
+      setTimeout(() => {
+        const tr = document.querySelector(`#detail tr[data-row-id="${CSS.escape(r.id)}"]`);
+        if (tr) { tr.classList.add('gn-focus-row'); tr.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => tr.classList.remove('gn-focus-row'), 2500); }
+      }, 150);
+    }));
+    $('weekGrid').querySelectorAll('[data-gn-add]').forEach(b => b.addEventListener('click', () => {
+      const r = findRow(b.dataset.gnAdd); if (r) G.notes.openComposer(act(r), refreshNotes);
+    }));
+  }
+
+  async function refreshNotes() { await loadNotes(); renderDetail(); renderWeek(); renderNotices(); }
+
+  function weekLabel(days) {
+    const a = G.parseISO(days[0]), b = G.parseISO(days[4]);
+    const m = d => new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(d);
+    return a.getMonth() === b.getMonth() ? `Semana del ${a.getDate()} al ${b.getDate()} de ${m(b)}` : `Semana del ${a.getDate()} de ${m(a)} al ${b.getDate()} de ${m(b)}`;
+  }
+  function renderWeekNav() {
+    const d = calDays(), a = G.parseISO(d[0]), b = G.parseISO(d[4]);
+    const f = x => new Intl.DateTimeFormat('es-PA', { day: 'numeric', month: 'long' }).format(x);
+    $('weekRange').textContent = `${f(a)} – ${f(b)} de ${b.getFullYear()}`;
+    $('weekNow').disabled = calDays()[0] === daysOf(todayIso())[0];
+  }
+  async function changeWeek(anchor) { weekAnchor = anchor; await loadWeek(); await loadNotes(); renderWeek(); }
+  function shiftWeek(n) { const d = G.parseISO(weekAnchor); d.setDate(d.getDate() + 7 * n); changeWeek(G.isoDate(d)); }
+
+  async function renderNotices() {
+    const items = await G.notes.unreadNotices(byId);
+    $('gnNotices').innerHTML = G.notes.noticesHtml(items, i => `panel-gerencia.html?nota=${encodeURIComponent(i.note.id)}`);
+  }
+
+  async function changeDate(iso) { date = iso; weekAnchor = iso; await loadData(); renderSection1(); renderWeek(); }
+
+  async function openNoteFromLink() {
+    const id = new URLSearchParams(location.search).get('nota');
+    if (!id) return;
+    history.replaceState(null, '', location.pathname);
+    const found = await G.notes.resolveNoteLink(id);
+    if (!found) return;
+    const owner = byId.get(found.activity.owner_id);
+    selected = owner?.person_code || 'all';
+    await changeDate(found.activity.agenda_date);
+    setTimeout(() => {
+      const tr = document.querySelector(`#detail tr[data-row-id="${CSS.escape(found.activity.id)}"]`);
+      if (tr) { tr.classList.add('gn-focus-row'); tr.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      G.notes.markRead([found.note.id]).then(renderNotices);
+    }, 300);
+  }
+
+  /* ------------------------------------------------------------ inicio */
+  async function start() {
+    G.injectCss();
+    const { data: s } = await client.auth.getSession();
+    const user = s.session?.user;
+    if (!user) { location.replace('index.html?volver=panel-gerencia.html'); return; }
+    const { data: list, error } = await client.from('profiles').select('id,email,full_name,person_code,access_role');
+    if (error) throw error;
+    profiles = list || [];
+    me = profiles.find(p => p.id === user.id);
+    if (!me || me.access_role !== 'management_viewer') { location.replace('index.html'); return; }
+    G.notes.setMe(me);
+    profiles.forEach(p => { byId.set(p.id, p); if (p.person_code) byCode.set(p.person_code, p); });
+    $('meEmail').textContent = me.email || '';
+    const ph = G.weeklyPhrase('Ing. Zapata');
+    $('phraseT').textContent = ph.title;
+    $('phraseX').textContent = ph.text;
+    $('weekFilter').innerHTML = '<option value="">Todo el equipo</option>' + PEOPLE.filter(p => byCode.has(p.code)).map(p => `<option value="${p.code}">${esc(p.name)}</option>`).join('');
+    await loadData();
+    renderSection1(); renderWeek();
+    $('loading').classList.add('hidden'); $('app').classList.remove('hidden');
+    renderNotices();
+    openNoteFromLink();
+  }
+
+  $('deptBtn').addEventListener('click', () => { selected = selected === 'all' ? null : 'all'; renderSection1(); });
+  $('datePicker').addEventListener('change', e => e.target.value && changeDate(e.target.value));
+  $('prevDay').addEventListener('click', () => { const d = G.parseISO(date); d.setDate(d.getDate() - 1); changeDate(G.isoDate(d)); });
+  $('nextDay').addEventListener('click', () => { const d = G.parseISO(date); d.setDate(d.getDate() + 1); changeDate(G.isoDate(d)); });
+  $('todayBtn').addEventListener('click', () => changeDate(todayIso()));
+  $('weekFilter').addEventListener('change', renderWeek);
+  $('weekPrev').addEventListener('click', () => shiftWeek(-1));
+  $('weekNext').addEventListener('click', () => shiftWeek(1));
+  $('weekNow').addEventListener('click', () => changeWeek(todayIso()));
+  $('logoutBtn').addEventListener('click', async () => { await client.auth.signOut(); location.replace('index.html'); });
+  start().catch(e => { console.error(e); $('loading').textContent = 'No se pudo cargar el panel. Actualice la página.'; });
+})();
+</script>
+</body>
+</html>

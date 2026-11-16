@@ -65,7 +65,7 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     <div class="brand-mark" style="margin:0 auto 14px">UPS</div>
     <h2>Validando acceso...</h2>
     <p id="authMessageText">Espere un momento.</p>
-    <a class="btn" href="index.html">Regresar a atajos</a>
+    <a class="btn" href="index.html">← Volver a mis accesos</a>
   </div>
 </div>
 
@@ -80,7 +80,7 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
         </div>
       </div>
       <div class="actions">
-        <a class="btn" href="index.html">⌂ Regresar a atajos</a>
+        <a class="btn" href="index.html">← Volver a mis accesos</a>
         <button class="btn hidden" id="refreshBtn" type="button">↻ Actualizar</button>
         <button class="btn" id="logoutBtn" type="button">Cerrar sesión</button>
       </div>
@@ -204,8 +204,10 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     const t=profileText(p);
     return p?.access_role==='management_viewer'||t.includes('zapata')||t.includes('ingeniero');
   }
-  function allowed(p){return isYorlenis(p)||isReception(p)||isEngineer(p)}
-  function manager(p){return isYorlenis(p)||isReception(p)}
+  /* Ven el dashboard: Ing. Zapata, Yoselin y Yorlenis. Solo Yorlenis lo sube. */
+  function isYoselin(p){return norm(p?.person_code)==='yoselin'}
+  function allowed(p){return isYorlenis(p)||isEngineer(p)||isYoselin(p)}
+  function manager(p){return isYorlenis(p)}
   function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
   function pad(v){return String(v).padStart(2,'0')}
   function iso(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -403,7 +405,7 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     const toolbar=`
       <div id="gups-dashboard-toolbar" style="position:fixed;top:14px;right:14px;z-index:2147483647;display:flex;gap:8px;align-items:center;padding:8px;background:rgba(255,255,255,.96);border:1px solid #d8e2f0;border-radius:14px;box-shadow:0 10px 30px rgba(15,23,42,.18);backdrop-filter:blur(8px)">
         ${manageButton}
-        <a href="${homeUrl}" style="text-decoration:none;border:1px solid #c9d8ea;border-radius:10px;padding:10px 14px;background:#fff;color:#073763;font:700 14px Arial,sans-serif">⌂ Regresar a atajos</a>
+        <a href="${homeUrl}" style="text-decoration:none;border:1px solid #c9d8ea;border-radius:10px;padding:10px 14px;background:#fff;color:#073763;font:700 14px Arial,sans-serif">← Volver a mis accesos</a>
       </div>`;
     if(/<body\b[^>]*>/i.test(htmlText)){
       return htmlText.replace(/<body\b([^>]*)>/i,match=>match+toolbar);
@@ -411,7 +413,8 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
     return toolbar+htmlText;
   }
 
-  async function openDashboard(row){
+  async function openDashboard(row,sameTab=false){
+    if(sameTab)return openDashboardHere(row);
     const viewer=window.open('','_blank');
     if(!viewer){
       alert('El navegador bloqueó la nueva pestaña. Permite ventanas emergentes para esta página.');
@@ -442,15 +445,35 @@ input:focus,textarea:focus{border-color:var(--blue-600);box-shadow:0 0 0 3px rgb
         '<!doctype html><html><body style="font-family:Arial,sans-serif;padding:30px;color:#b42318">'+
         '<h2>No se pudo abrir el dashboard.</h2>'+
         '<p>Vuelva a la Agenda Grupo UPS e intente nuevamente.</p>'+
-        '<p><a href="'+APP_BASE+'index.html">Regresar a atajos</a></p>'+
+        '<p><a href="'+APP_BASE+'index.html">← Volver a mis accesos</a></p>'+
         '</body></html>'
       );
       viewer.document.close();
     }
   }
 
+  async function openDashboardHere(row){
+    const list=document.getElementById('dashboardList');
+    if(list)list.innerHTML='<div class="loading">Abriendo el dashboard de esta semana…</div>';
+    try{
+      const{data,error}=await client.storage.from('weekly-dashboards').createSignedUrl(row.storage_path,3600);
+      if(error)throw error;
+      const response=await fetch(data.signedUrl);
+      if(!response.ok)throw new Error('No se pudo descargar el archivo HTML.');
+      let htmlText=await response.text();
+      htmlText=repairSavedPageDependencies(htmlText);
+      htmlText=injectViewerToolbar(htmlText,row);
+      const blob=new Blob([htmlText],{type:'text/html;charset=utf-8'});
+      window.location.replace(URL.createObjectURL(blob));
+    }catch(error){
+      console.error('Abrir dashboard:',error);
+      if(list)list.innerHTML='<div class="empty">No se pudo abrir el dashboard. Toque "Abrir dashboard" para intentarlo de nuevo.</div>';
+      await loadDashboards();
+    }
+  }
+
   async function sendDashboardNotice(start,end){
-    const dashboardUrl=APP_BASE+'dashboard-semanal.html';
+    const dashboardUrl=APP_BASE+'dashboard-semanal.html?ver=ultimo';
     const period=rangeLabel(start,end);
     const {error}=await client.functions.invoke('send-agenda-email',{
       body:{
@@ -548,7 +571,7 @@ to:[
 
   async function init(){
     const{data:sessionData}=await client.auth.getSession();
-    if(!sessionData.session?.user){showDenied('Debe iniciar sesión para ver este módulo.');return}
+    if(!sessionData.session?.user){window.location.replace('index.html?volver='+encodeURIComponent('dashboard-semanal.html'+location.search));return}
     user=sessionData.session.user;
 
     const{data,error}=await client.from('profiles')
@@ -563,6 +586,10 @@ to:[
     showApp();
     setCurrentWeek();
     await loadDashboards();
+    if(new URLSearchParams(location.search).get('ver')==='ultimo'&&dashboardRows.length){
+      await openDashboard(dashboardRows[0],true);
+      return;
+    }
     startRealtime();
   }
 
