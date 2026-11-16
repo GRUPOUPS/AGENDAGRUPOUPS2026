@@ -274,6 +274,7 @@ textarea{min-height:47px;resize:vertical}
 .activity-box-actions{width:100%}
 .activity-cancel-btn{border:1px solid #efb0aa;background:#fff5f4;color:var(--red);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850}
 .activity-reactivate-btn{border:1px solid #c8d7e8;background:#fff;color:var(--blue-900);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850}
+.activity-move-btn{border:1px solid #c9d8ea;background:#fff;color:#0b4da2;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .activity-delete-btn{border:1px solid #efc1bc;background:#fff;color:var(--red);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px}
 .activity-cancel-note{margin-top:9px;padding:8px 10px;border-radius:9px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800}
 .activity-card input:disabled,.activity-card textarea:disabled,.activity-card select:disabled{background:#f5f7fa;color:#667085;opacity:1}
@@ -1273,6 +1274,7 @@ Ver semana del asesor</button>
           ${cancelled
             ? `<button type="button" class="activity-reactivate-btn" data-reactivate="${i}">↩ Reactivar</button>`
             : `<button type="button" class="activity-cancel-btn" data-cancel="${i}">🚫 Cancelar</button>`}
+          <button type="button" class="activity-move-btn" data-move="${i}">📅 Mover a otra fecha</button>
           <button type="button" class="activity-delete-btn" data-delete="${i}">🗑 Eliminar</button>
         </div>`:`<div class="horizontal-readonly">Modo consulta · No puede editar esta actividad.</div>`}
       </td>
@@ -1350,6 +1352,7 @@ Ver semana del asesor</button>
       }));
 
       document.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>deleteActivity(Number(btn.dataset.delete))));
+      document.querySelectorAll('[data-move]').forEach(btn=>btn.addEventListener('click',()=>openMoveDialog(Number(btn.dataset.move))));
     }
   }
 
@@ -1683,6 +1686,53 @@ Ver semana del asesor</button>
       });
     });
   }
+  /* ===== Mover una actividad a otra fecha (por si se agendó en el día equivocado) ===== */
+  function openMoveDialog(index){
+    if(!canEditSelectedCalendar()){showToast('No tiene permiso para editar esta agenda.');return}
+    const row=getRows(selectedPerson)[index];if(!row)return;
+    if(window.GUPS)window.GUPS.injectCss();
+    const next=parseLocalDate(currentDate);next.setDate(next.getDate()+1);
+    const back=document.createElement('div');
+    back.className='gn-modal-back';
+    back.innerHTML=`<div class="gn-modal" role="dialog" aria-modal="true" aria-labelledby="mvTitle">
+      <h3 id="mvTitle">Mover actividad a otra fecha</h3>
+      <div style="font-size:14px;color:#475467;line-height:1.45"><strong>${escapeHtml(row.companyContact||'Sin empresa / contacto')}</strong> – ${escapeHtml(row.activity||'Sin actividad')}<br>Hoy está en: <strong>${escapeHtml(capitalize(formatDate(currentDate)))}</strong>, ${escapeHtml(compactTime(row.start))} – ${escapeHtml(compactTime(row.end))}</div>
+      <label for="mvDate" style="font-size:13px;font-weight:700">¿Para qué día es esta actividad?</label>
+      <input id="mvDate" type="date" value="${localDateISO(next)}" style="height:46px;padding:0 12px;border:1px solid #c9d8ea;border-radius:10px;font:600 15px Inter,Segoe UI,Arial,sans-serif">
+      <span class="gn-hint" id="mvHint"></span>
+      <span class="gn-hint">Se mueve con el mismo horario, resultado, ubicación y notas.</span>
+      <span class="gn-err" id="mvErr"></span>
+      <div class="gn-row" style="justify-content:flex-end"><button type="button" class="gn-btn ghost" id="mvCancel">Cancelar</button><button type="button" class="gn-btn" id="mvOk">Mover actividad</button></div>
+    </div>`;
+    document.body.appendChild(back);
+    const input=back.querySelector('#mvDate'),hint=back.querySelector('#mvHint'),err=back.querySelector('#mvErr');
+    const showHint=()=>{hint.textContent=input.value?`Se moverá al ${formatDate(input.value)}.`:''};
+    showHint();input.addEventListener('change',showHint);input.focus();
+    const close=()=>back.remove();
+    back.querySelector('#mvCancel').addEventListener('click',close);
+    back.addEventListener('click',e=>{if(e.target===back)close()});
+    back.querySelector('#mvOk').addEventListener('click',async()=>{
+      const newDate=input.value;
+      if(!newDate){err.textContent='Elija la nueva fecha.';return}
+      if(newDate===currentDate){err.textContent='Elija una fecha distinta a la actual.';return}
+      const ok=back.querySelector('#mvOk');ok.disabled=true;ok.textContent='Moviendo…';
+      const done=await moveActivity(row,newDate);
+      if(done){close();}else{ok.disabled=false;ok.textContent='Mover actividad';err.textContent='No se pudo mover la actividad. Intente de nuevo.'}
+    });
+  }
+  async function moveActivity(row,newDate){
+    /* Guarda primero cualquier cambio que se esté escribiendo, ya con la nueva fecha. */
+    clearTimeout(saveTimers.get(row.id));saveTimers.delete(row.id);
+    const payload=rowPayload(row,selectedPerson,newDate);
+    const {error}=await supabaseClient.from('commercial_calendar').update(payload).eq('id',row.id);
+    if(error){console.error(error);return false}
+    db[selectedPerson]=getRows(selectedPerson).filter(r=>r.id!==row.id);
+    suppressRealtimeUntil=Date.now()+1200;
+    renderAll();
+    showToast(`Actividad movida al ${formatDate(newDate)}.`);
+    return true;
+  }
+
   async function deleteActivity(index){if(!canEditSelectedCalendar()){showToast('No tiene permiso para editar esta agenda.');return}const row=getRows(selectedPerson)[index];if(!row)return;const {error}=await supabaseClient.from('commercial_calendar').delete().eq('id',row.id);if(error){showToast('No se pudo eliminar.');return}db[selectedPerson]=getRows(selectedPerson).filter((_,i)=>i!==index);suppressRealtimeUntil=Date.now()+1200;renderAll();showToast('Actividad eliminada.')}
   async function clearDay(){if(!canEditSelectedCalendar()){showToast('No tiene permiso para editar esta agenda.');return}if(!selectedPerson||!getRows(selectedPerson).length)return;if(!confirm(`¿Eliminar todas las actividades de ${PEOPLE.find(p=>p.id===selectedPerson).name} para esta fecha?`))return;const owner=personProfile(selectedPerson);const {error}=await supabaseClient.from('commercial_calendar').delete().eq('owner_id',owner.id).eq('agenda_date',currentDate);if(error){showToast('No se pudo limpiar el día.');return}db[selectedPerson]=[];suppressRealtimeUntil=Date.now()+1200;renderAll();showToast('Día limpiado.')}
   function renderAll(){document.getElementById('datePicker').value=currentDate;renderPeople();if(selectedPerson)renderPerson();else renderTeam()}
