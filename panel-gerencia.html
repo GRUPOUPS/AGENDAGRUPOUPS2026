@@ -287,7 +287,7 @@ table.d.compact{min-width:900px}
         <span class="cta">${on ? 'Mostrando su agenda ↓' : (date === todayIso() ? 'Ver agenda de hoy' : 'Ver agenda de este día')}</span>
       </button>`;
     }).join('');
-    $('cards').querySelectorAll('[data-person]').forEach(b => b.addEventListener('click', () => { selected = selected === b.dataset.person ? null : b.dataset.person; renderSection1(); }));
+    $('cards').querySelectorAll('[data-person]').forEach(b => b.addEventListener('click', () => { selected = selected === b.dataset.person ? null : b.dataset.person; renderSection1(); goToDetail(); }));
   }
 
   function rowsTable(rows) {
@@ -335,6 +335,15 @@ table.d.compact{min-width:900px}
     </div>`;
     $('closeDetail').addEventListener('click', () => { selected = null; renderSection1(); });
     G.notes.bind(box, { activityById: id => { const r = findRow(id); return r ? act(r) : null; }, activityIdOfNote: G.notes.activityIdOfNote, onChange: refreshNotes });
+  }
+
+  /* Lleva la vista hasta la agenda que se acaba de abrir. */
+  function goToDetail() {
+    if (!selected) return;
+    const d = $('detail').firstElementChild;
+    if (!d) return;
+    const top = d.getBoundingClientRect().top + window.scrollY - 16;
+    window.scrollTo({ top, behavior: 'smooth' });
   }
 
   function renderSection1() { renderHeader(); renderCards(); renderDetail(); }
@@ -439,7 +448,7 @@ table.d.compact{min-width:900px}
     openNoteFromLink();
   }
 
-  $('deptBtn').addEventListener('click', () => { selected = selected === 'all' ? null : 'all'; renderSection1(); });
+  $('deptBtn').addEventListener('click', () => { selected = selected === 'all' ? null : 'all'; renderSection1(); goToDetail(); });
   $('datePicker').addEventListener('change', e => e.target.value && changeDate(e.target.value));
   $('prevDay').addEventListener('click', () => { const d = G.parseISO(date); d.setDate(d.getDate() - 1); changeDate(G.isoDate(d)); });
   $('nextDay').addEventListener('click', () => { const d = G.parseISO(date); d.setDate(d.getDate() + 1); changeDate(G.isoDate(d)); });
