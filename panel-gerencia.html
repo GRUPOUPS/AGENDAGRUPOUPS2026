@@ -159,8 +159,8 @@ table.d.compact{min-width:900px}
     <div class="cards" id="cards"></div>
     <div class="legend">
       <span><i style="background:#15803d"></i>Al día: sin pendientes atrasados</span>
-      <span><i style="background:#c98a00"></i>Revisar: tiene actividades anteriores sin resultado</span>
-      <span><i style="background:#b42318"></i>Atención: actividades sin resultado de hace más de 3 días</span>
+      <span><i style="background:#c98a00"></i>Revisar: tiene actividades sin resultado de hasta 1 semana atrás</span>
+      <span><i style="background:#b42318"></i>Atención: tiene actividades sin resultado de hace más de 1 semana</span>
     </div>
     <div id="detail"></div>
   </section>
@@ -233,7 +233,7 @@ table.d.compact{min-width:900px}
 
   /* ------------------------------------------------------------ carga */
   async function loadDay() {
-    const back = new Date(G.parseISO(date)); back.setDate(back.getDate() - 30);
+    const back = new Date(G.parseISO(date)); back.setDate(back.getDate() - 60);
     const [d, b] = await Promise.all([
       client.from('commercial_calendar').select('*').eq('agenda_date', date).order('start_time', { ascending: true }),
       client.from('commercial_calendar').select('id,owner_id,agenda_date,status,result').gte('agenda_date', G.isoDate(back)).lt('agenda_date', date)
@@ -269,7 +269,8 @@ table.d.compact{min-width:900px}
     const p = byCode.get(code); if (!p) return ['Al día', 'b-ok'];
     const mine = backlog.filter(r => r.owner_id === p.id);
     if (!mine.length) return ['Al día', 'b-ok'];
-    const limit = new Date(G.parseISO(date)); limit.setDate(limit.getDate() - 3);
+    /* Más de 1 semana sin resultado: rojo. Hasta 1 semana: amarillo. */
+    const limit = new Date(G.parseISO(date)); limit.setDate(limit.getDate() - 7);
     return mine.some(r => G.parseISO(r.agenda_date) < limit) ? ['Atención', 'b-bad'] : ['Revisar', 'b-warn'];
   }
 
