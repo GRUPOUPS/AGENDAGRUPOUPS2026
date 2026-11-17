@@ -205,7 +205,7 @@
     if(c==='jennifer')          return {commercial:true,gups:true,commercialText:'Su agenda y la de Eric Guzmán. Puede ver y editar.'};
     if(c==='eric')              return {commercial:true,myReport:true,gups:true,commercialTitle:'Mi agenda',commercialText:'Su agenda y la de Jennifer Pineda. Puede ver y editar.'};
     if(c==='hector')            return {commercial:true,myReport:true,gups:true,commercialTitle:'Mi agenda',commercialText:'Sus actividades y las notas que le dejen.'};
-    if(r==='reception_staff')   return {commercial:true,reception:true,calls:true,commercialText:'Edita la suya. Consulta la de Eric, Héctor y Yoselin.'};
+    if(r==='reception_staff')   return {commercial:true,reception:true,calls:true,commercialText:'Consulta la agenda de todo el equipo. Edita solo la suya.'};
     if(r==='seller'&&c)         return {commercial:true,gups:true,commercialTitle:'Mi agenda'};
     return null;
   }
