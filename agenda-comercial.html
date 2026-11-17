@@ -625,7 +625,8 @@ Ver semana del asesor</button>
     if(role==='management_viewer'||role==='sales_admin')return PEOPLE.map(p=>p.id);
     if(code==='jennifer')return ['eric','jennifer'];
     if(code==='eric')return ['eric','jennifer'];
-    if(role==='reception_staff')return ['eric','hector','yoselin','sebastian'];
+    /* Recepción ve todas las agendas, pero solo edita la suya. */
+    if(role==='reception_staff')return PEOPLE.map(p=>p.id);
     return code?[code]:[];
   }
   function canSeeTeam(){return visiblePersonIds().length>1}
@@ -1874,7 +1875,7 @@ function showDailyMotivation(){
   }
 
   if(role==='reception_staff'){
-    return ['eric','hector','yoselin','sebastian'];
+    return PEOPLE.map(x=>x.id);
   }
 
   return code ? [code] : [];
