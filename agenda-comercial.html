@@ -274,6 +274,10 @@ textarea{min-height:47px;resize:vertical}
 .activity-box-actions{width:100%}
 .activity-cancel-btn{border:1px solid #efb0aa;background:#fff5f4;color:var(--red);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850}
 .activity-reactivate-btn{border:1px solid #c8d7e8;background:#fff;color:var(--blue-900);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850}
+.loc-warning{margin-top:8px;padding:9px 11px;border-radius:10px;background:#fff5d8;border:1px solid #f3dc9b;color:#5c3d00;font-size:12px;line-height:1.4;font-weight:600}
+.loc-warning strong{color:#7a5000}
+.loc-warning button{margin-top:6px;display:block;border:0;border-radius:8px;background:#7a5000;color:#fff;font:800 12px Inter,Segoe UI,Arial,sans-serif;padding:7px 10px;cursor:pointer}
+.horizontal-location select.loc-missing,.horizontal-location input.loc-missing{border:2px solid #c98a00!important;background:#fffdf5}
 .activity-move-btn{border:1px solid #c9d8ea;background:#fff;color:#0b4da2;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .activity-delete-btn{border:1px solid #efc1bc;background:#fff;color:var(--red);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px}
 .activity-cancel-note{margin-top:9px;padding:8px 10px;border-radius:9px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800}
@@ -570,7 +574,7 @@ Ver semana del asesor</button>
     { id:'jennifer', name:'Jennifer Pineda', initials:'JP', role:'Asistente de ventas'},
     { id:'sebastian', name:'Sebastián Rodríguez', initials:'SR', role:'Recepción' }
   ];
-  const LOCATION_OPTIONS = ['Oficina Santa María','En campo / Cliente','Home Office','Virtual / Teams / Zoom'];
+  const LOCATION_OPTIONS = ['Oficina Santa María','Oficina – reunión interna','En campo / Cliente','Home Office','Virtual / Teams / Zoom'];
   const VOICE_BUCKET='assistant-voice-notes';
   const voiceStates=new Map();
   const authScreen=document.getElementById('authScreen');
@@ -1181,6 +1185,45 @@ Ver semana del asesor</button>
     bindRows();
     decorateNotes();
   }
+  /* Recordatorio de ubicación: reuniones, visitas e inspecciones fuera de la oficina. */
+  const OUTING_WORDS=/(reuni|visit|inspecc)/i;
+  function needsLocation(row){
+    if(!row||row.status==='cancelled')return false;
+    const text=`${row.activity||''}`;
+    if(!OUTING_WORDS.test(text))return false;
+    if(/intern/i.test(text))return false;   /* «reunión interna»: no hace falta ubicación */
+    const preset=getLocationPreset(row);
+    if(['Virtual / Teams / Zoom','Home Office','Oficina – reunión interna'].includes(preset))return false;
+    if(preset==='other')return !String(row.locationCustom||'').trim();
+    return true;
+  }
+  function locWarningHtml(row){
+    const custom=getLocationPreset(row)==='other';
+    if(custom)return `<div class="loc-warning" data-loc-warning role="status">⚠ <strong>Falta la ubicación.</strong> Escriba a dónde va.</div>`;
+    return `<div class="loc-warning" data-loc-warning role="status">⚠ <strong>¿Dónde es esta actividad?</strong> Parece una reunión, visita o inspección.
+      <button type="button" data-loc-fix>Es fuera: escribir a dónde va</button>
+      <button type="button" data-loc-internal style="background:#fff;color:#7a5000;border:1px solid #c98a00">Es en la oficina (reunión interna)</button></div>`;
+  }
+  function updateLocWarning(rowEl,row){
+    const box=rowEl.querySelector('.horizontal-location');if(!box)return;
+    const old=box.querySelector('[data-loc-warning]');if(old)old.remove();
+    const sel=box.querySelector('[data-field="locationPreset"]'),inp=box.querySelector('[data-field="locationCustom"]');
+    const missing=needsLocation(row);
+    if(sel)sel.classList.toggle('loc-missing',missing&&getLocationPreset(row)!=='other');
+    if(inp)inp.classList.toggle('loc-missing',missing&&getLocationPreset(row)==='other');
+    if(!missing)return;
+    box.insertAdjacentHTML('beforeend',locWarningHtml(row));
+    const internal=box.querySelector('[data-loc-internal]');
+    if(internal)internal.addEventListener('click',()=>{
+      if(sel){sel.value='Oficina – reunión interna';sel.dispatchEvent(new Event('change'));}
+    });
+    const fix=box.querySelector('[data-loc-fix]');
+    if(fix)fix.addEventListener('click',()=>{
+      if(sel){sel.value='other';sel.dispatchEvent(new Event('change'));}
+      if(inp){inp.classList.remove('hidden');inp.focus();}
+    });
+  }
+
   function getLocationPreset(row){const p=row.locationPreset;if(p==='other')return'other';if(LOCATION_OPTIONS.includes(p))return p;return row.locationCustom?'other':'Oficina Santa María'}
   function canRecordVoiceForPerson(personId){
     const code=currentProfile?.person_code;
@@ -1266,7 +1309,7 @@ Ver semana del asesor</button>
       <td class="col-location">
         <div class="horizontal-location">
           <select data-field="locationPreset" ${disabled}>${LOCATION_OPTIONS.map(opt=>`<option value="${opt}" ${preset===opt?'selected':''}>${opt}</option>`).join('')}<option value="other" ${isOther?'selected':''}>Otra ubicación</option></select>
-          <input type="text" data-field="locationCustom" class="${isOther?'':'hidden'}" placeholder="Otra ubicación" value="${escapeAttr(r.locationCustom||'')}" ${disabled}>
+          <input type="text" data-field="locationCustom" class="${isOther?'':'hidden'}" placeholder="¿A dónde va? Ej.: Hospital Santo Tomás" value="${escapeAttr(r.locationCustom||'')}" ${disabled}>
         </div>
       </td>
       <td class="col-status"><span class="activity-status ${st}" data-status-badge>${statusLabel(st)}</span></td>
@@ -1321,10 +1364,13 @@ Ver semana del asesor</button>
               updateCardStatus(rowEl,row);
             }
 
+            if(field==='activity'||field==='locationPreset'||field==='locationCustom')updateLocWarning(rowEl,row);
             renderCountsOnly();
             scheduleSave(row);
           });
         });
+        const row0=getRows(selectedPerson)[index];
+        if(row0)updateLocWarning(rowEl,row0);
       });
 
       document.querySelectorAll('[data-cancel]').forEach(btn=>btn.addEventListener('click',()=>{
