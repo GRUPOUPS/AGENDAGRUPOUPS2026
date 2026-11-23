@@ -278,6 +278,14 @@ textarea{min-height:47px;resize:vertical}
 .loc-warning strong{color:#7a5000}
 .loc-warning button{margin-top:6px;display:block;border:0;border-radius:8px;background:#7a5000;color:#fff;font:800 12px Inter,Segoe UI,Arial,sans-serif;padding:7px 10px;cursor:pointer}
 .horizontal-location select.loc-missing,.horizontal-location input.loc-missing{border:2px solid #c98a00!important;background:#fffdf5}
+.owner-banner{margin:0 0 14px;padding:13px 16px;border-radius:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;font-size:15px;line-height:1.4}
+.owner-banner.other{background:#fff1e6;border:2px solid #e8772e;color:#5a2a06}
+.owner-banner.view{background:#eef4fd;border:1px solid #c9d8ea;color:#0b3a73}
+.owner-banner.mine{background:#eaf8ef;border:1px solid #b7e3c6;color:#14532d;font-size:14px;padding:9px 14px}
+.owner-banner button{border:0;border-radius:10px;background:#e8772e;color:#fff;font:800 13px Inter,Segoe UI,Arial,sans-serif;padding:9px 14px;cursor:pointer}
+.activity-transfer-btn{border:1px solid #f3c9a8;background:#fff;color:#a4470f;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.tr-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #d8e2f0;border-radius:12px;cursor:pointer;font-size:14px}
+.tr-opt:has(input:checked){border:2px solid #0b4da2;background:#f3f8ff}
 .activity-move-btn{border:1px solid #c9d8ea;background:#fff;color:#0b4da2;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .activity-delete-btn{border:1px solid #efc1bc;background:#fff;color:var(--red);border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px}
 .activity-cancel-note{margin-top:9px;padding:8px 10px;border-radius:9px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800}
@@ -524,6 +532,7 @@ Ver semana del asesor</button>
             </button>
 </div>
 </div>
+<div id="ownerBanner"></div>
 <div class="table-wrap" id="tableWrap"></div>
 </div>
 <div class="footer-note"><span class="dot"></span> <span id="syncText">Sincronizado con Supabase.</span></div>
@@ -1148,8 +1157,27 @@ Ver semana del asesor</button>
     }));;
   }
 
+  /* ===== Aviso claro de en qué agenda está ===== */
+  function renderOwnerBanner(){
+    const box=document.getElementById('ownerBanner');if(!box)return;
+    if(!selectedPerson){box.innerHTML='';return}
+    const mine=profileCode();
+    const p=PEOPLE.find(x=>x.id===selectedPerson);
+    const name=p?p.name:selectedPerson;
+    if(mine&&selectedPerson===mine){box.innerHTML='<div class="owner-banner mine">✔ Está en <strong>su propia agenda</strong>.</div>';return}
+    const canGoMine=mine&&people.some(x=>x.id===mine);
+    if(canEditPerson(selectedPerson)){
+      box.innerHTML=`<div class="owner-banner other" role="alert"><span>✏️ <strong>Está editando la agenda de ${escapeHtml(name)}</strong>, no la suya. Revise antes de agregar o cambiar actividades.</span>${canGoMine?'<button type="button" id="goMyAgenda">Ir a mi agenda</button>':''}</div>`;
+    }else{
+      box.innerHTML=`<div class="owner-banner view">👁 Está viendo la agenda de <strong>${escapeHtml(name)}</strong> (solo consulta).${canGoMine?' <button type="button" id="goMyAgenda" style="background:#0b4da2">Ir a mi agenda</button>':''}</div>`;
+    }
+    const go=document.getElementById('goMyAgenda');
+    if(go)go.addEventListener('click',()=>openPerson(mine));
+  }
+
   function renderPerson(){
     if(!selectedPerson)return;
+    renderOwnerBanner();
 
     const rows=getRows(selectedPerson);
     document.getElementById('personStats').innerHTML=statsHtml(countFor(selectedPerson));
@@ -1319,6 +1347,7 @@ Ver semana del asesor</button>
             ? `<button type="button" class="activity-reactivate-btn" data-reactivate="${i}">↩ Reactivar</button>`
             : `<button type="button" class="activity-cancel-btn" data-cancel="${i}">🚫 Cancelar</button>`}
           <button type="button" class="activity-move-btn" data-move="${i}">📅 Mover a otra fecha</button>
+          ${transferTargets().length?`<button type="button" class="activity-transfer-btn" data-transfer="${i}">👤 Pasar a otra persona</button>`:''}
           <button type="button" class="activity-delete-btn" data-delete="${i}">🗑 Eliminar</button>
         </div>`:`<div class="horizontal-readonly">Modo consulta · No puede editar esta actividad.</div>`}
       </td>
@@ -1400,6 +1429,7 @@ Ver semana del asesor</button>
 
       document.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>deleteActivity(Number(btn.dataset.delete))));
       document.querySelectorAll('[data-move]').forEach(btn=>btn.addEventListener('click',()=>openMoveDialog(Number(btn.dataset.move))));
+      document.querySelectorAll('[data-transfer]').forEach(btn=>btn.addEventListener('click',()=>openTransferDialog(Number(btn.dataset.transfer))));
     }
   }
 
@@ -1665,6 +1695,11 @@ Ver semana del asesor</button>
   async function addActivity(){
     if(!canEditSelectedCalendar()){showToast('No tiene permiso para editar esta agenda.');return}
     if(!selectedPerson)return;
+    const mineCode=profileCode();
+    if(mineCode&&selectedPerson!==mineCode){
+      const owner=PEOPLE.find(x=>x.id===selectedPerson);
+      if(!confirm(`¿Agregar esta actividad en la agenda de ${owner?owner.name:selectedPerson}?\n\nSi la actividad es suya, toque «Cancelar» y abra su propia agenda.`))return;
+    }
 
     const rows=getRows(selectedPerson);
     let start='08:00',end='09:00';
@@ -1778,6 +1813,50 @@ Ver semana del asesor</button>
     renderAll();
     showToast(`Actividad movida al ${formatDate(newDate)}.`);
     return true;
+  }
+
+  /* ===== Pasar una actividad a la agenda de otra persona ===== */
+  function transferTargets(){
+    if(!selectedPerson)return[];
+    return people.filter(p=>p.id!==selectedPerson&&canEditPerson(p.id)&&personProfile(p.id));
+  }
+  function openTransferDialog(index){
+    if(!canEditSelectedCalendar())return;
+    const row=getRows(selectedPerson)[index];if(!row)return;
+    const targets=transferTargets();if(!targets.length)return;
+    if(window.GUPS)window.GUPS.injectCss();
+    const from=PEOPLE.find(x=>x.id===selectedPerson);
+    const mine=profileCode();
+    const def=targets.some(t=>t.id===mine)?mine:targets[0].id;
+    const back=document.createElement('div');
+    back.className='gn-modal-back';
+    back.innerHTML=`<div class="gn-modal" role="dialog" aria-modal="true" aria-labelledby="trTitle">
+      <h3 id="trTitle">Pasar actividad a otra persona</h3>
+      <div style="font-size:14px;color:#475467;line-height:1.45"><strong>${escapeHtml(row.companyContact||'Sin empresa / contacto')}</strong> – ${escapeHtml(row.activity||'Sin actividad')}<br>${escapeHtml(compactTime(row.start))} – ${escapeHtml(compactTime(row.end))} · Hoy está en la agenda de <strong>${escapeHtml(from?from.name:'')}</strong></div>
+      <span style="font-size:13px;font-weight:700">¿A la agenda de quién pertenece?</span>
+      <div style="display:flex;flex-direction:column;gap:8px">${targets.map(t=>`<label class="tr-opt"><input type="radio" name="trTo" value="${t.id}" ${t.id===def?'checked':''}> <span><strong>${escapeHtml(t.name)}</strong>${t.id===mine?' (su agenda)':''}<br><span style="font-size:12px;color:#667085">${escapeHtml(t.role)}</span></span></label>`).join('')}</div>
+      <span class="gn-hint">Se pasa el mismo día, con su horario, resultado, ubicación y notas.</span>
+      <span class="gn-err" id="trErr"></span>
+      <div class="gn-row" style="justify-content:flex-end"><button type="button" class="gn-btn ghost" id="trCancel">Cancelar</button><button type="button" class="gn-btn" id="trOk">Pasar actividad</button></div>
+    </div>`;
+    document.body.appendChild(back);
+    const close=()=>back.remove();
+    back.querySelector('#trCancel').addEventListener('click',close);
+    back.addEventListener('click',e=>{if(e.target===back)close()});
+    back.querySelector('#trOk').addEventListener('click',async()=>{
+      const to=back.querySelector('input[name="trTo"]:checked')?.value;
+      if(!to)return;
+      const ok=back.querySelector('#trOk');ok.disabled=true;ok.textContent='Pasando…';
+      clearTimeout(saveTimers.get(row.id));saveTimers.delete(row.id);
+      const payload=rowPayload(row,to,currentDate);
+      const {error}=await supabaseClient.from('commercial_calendar').update(payload).eq('id',row.id);
+      if(error){console.error(error);ok.disabled=false;ok.textContent='Pasar actividad';back.querySelector('#trErr').textContent='No se pudo pasar la actividad. Intente de nuevo.';return}
+      suppressRealtimeUntil=Date.now()+1200;
+      close();
+      await loadDate();
+      const dest=PEOPLE.find(x=>x.id===to);
+      showToast(`Actividad pasada a la agenda de ${dest?dest.name:to}.`);
+    });
   }
 
   async function deleteActivity(index){if(!canEditSelectedCalendar()){showToast('No tiene permiso para editar esta agenda.');return}const row=getRows(selectedPerson)[index];if(!row)return;const {error}=await supabaseClient.from('commercial_calendar').delete().eq('id',row.id);if(error){showToast('No se pudo eliminar.');return}db[selectedPerson]=getRows(selectedPerson).filter((_,i)=>i!==index);suppressRealtimeUntil=Date.now()+1200;renderAll();showToast('Actividad eliminada.')}
