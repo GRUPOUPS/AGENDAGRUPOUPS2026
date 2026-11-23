@@ -197,7 +197,7 @@ table.d.compact{min-width:900px}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="comun.js?v=20261116b"></script>
+<script src="comun.js?v=20261123"></script>
 <script>
 (() => {
   'use strict';
@@ -429,7 +429,7 @@ table.d.compact{min-width:900px}
     G.injectCss();
     const { data: s } = await client.auth.getSession();
     const user = s.session?.user;
-    if (!user) { location.replace('index.html?volver=panel-gerencia.html'); return; }
+    if (!user) { location.replace('index.html?volver=' + encodeURIComponent('panel-gerencia.html' + location.search)); return; }
     const { data: list, error } = await client.from('profiles').select('id,email,full_name,person_code,access_role');
     if (error) throw error;
     profiles = list || [];
