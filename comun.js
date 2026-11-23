@@ -242,8 +242,9 @@
       const body = (ta?.value || '').trim();
       if (!body) { if (err) err.textContent = 'Escriba su respuesta antes de enviarla.'; return; }
       btn.disabled = true; btn.textContent = 'Enviando…';
-      const { error } = await getClient().from('activity_notes').insert({ parent_id: id, activity_id: opts.activityIdOfNote(id), body });
+      const { data: saved, error } = await getClient().from('activity_notes').insert({ parent_id: id, activity_id: opts.activityIdOfNote(id), body }).select('id').single();
       if (error) { console.error(error); btn.disabled = false; btn.textContent = 'Enviar respuesta'; if (err) err.textContent = 'No se pudo enviar. Intente de nuevo.'; return; }
+      notifyByEmail(saved?.id);
       await markRead([id]);
       await opts.onChange();
     }));
@@ -255,6 +256,14 @@
       await opts.onChange();
     }));
     // Las notas quedan como NUEVAS hasta que la persona toca el aviso o responde.
+  }
+
+  /* Pide al servicio de Supabase que envíe el correo de aviso (no bloquea la pantalla). */
+  function notifyByEmail(noteId) {
+    if (!noteId) return;
+    getClient().functions.invoke('send-note-email', { body: { note_id: noteId } })
+      .then(({ error }) => { if (error) console.warn('Correo de nota:', error.message || error); })
+      .catch(e => console.warn('Correo de nota:', e));
   }
 
   function activityIdOfNote(id) {
@@ -275,7 +284,7 @@
       <div class="gn-row"><span class="gn-hint">Frases rápidas:</span>${QUICK.map((q, i) => `<button type="button" class="gn-chip" data-q="${i}">${esc(q)}</button>`).join('')}</div>
       <label for="gn-body" style="font-size:13px;font-weight:700">Nota</label>
       <textarea id="gn-body" rows="4" placeholder="Escriba su nota…"></textarea>
-      <span class="gn-hint">${esc(firstName(act.ownerName))} verá un aviso al entrar a la agenda y podrá ver la nota junto a esta actividad.</span>
+      <span class="gn-hint">${esc(firstName(act.ownerName))} recibirá un correo y verá un aviso al entrar a la agenda, junto a esta actividad.</span>
       <span class="gn-err" id="gn-merr"></span>
       <div class="gn-row" style="justify-content:flex-end"><button type="button" class="gn-btn ghost" id="gn-cancel">Cancelar</button><button type="button" class="gn-btn" id="gn-save">Guardar nota</button></div>
     </div>`;
@@ -291,8 +300,9 @@
       const err = back.querySelector('#gn-merr');
       if (!body) { err.textContent = 'Escriba la nota antes de guardarla.'; return; }
       const btn = back.querySelector('#gn-save'); btn.disabled = true; btn.textContent = 'Guardando…';
-      const { error } = await getClient().from('activity_notes').insert({ activity_id: act.id, body });
+      const { data: saved, error } = await getClient().from('activity_notes').insert({ activity_id: act.id, body }).select('id').single();
       if (error) { console.error(error); btn.disabled = false; btn.textContent = 'Guardar nota'; err.textContent = 'No se pudo guardar la nota. ' + (error.message || ''); return; }
+      notifyByEmail(saved?.id);
       close();
       if (onSaved) await onSaved();
     });
