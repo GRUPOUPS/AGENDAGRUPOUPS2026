@@ -90,11 +90,6 @@
           <h3>Mi informe semanal</h3>
           <p>Consulta tu último informe semanal disponible.</p>
         </a>
-        <a id="callsOption" class="option hidden" href="https://grupoups.github.io/seguimientollamadas/" target="_blank" rel="noopener">
-          <div class="icon">☎️</div>
-          <h3>Seguimiento Comercial</h3>
-          <p>Acceso a llamadas, clientes, cotizaciones y seguimientos comerciales.</p>
-        </a>
       </div>
       <div id="weeklyReportAdmin" class="hidden"
      style="margin-top:22px;padding:22px;border:1px solid var(--border);border-radius:20px;background:#fff;">
@@ -198,14 +193,14 @@
     const r=role(p), c=code(p);
     if(r==='management_viewer') return {panel:true,reception:true,dashboard:true,gups:true};
     if(r==='reception_only')    return {personnel:true};
-    if(isYorlenis(p))           return {commercial:true,reception:true,dashboard:true,manager:true,reports:true,calls:true,
+    if(isYorlenis(p))           return {commercial:true,reception:true,dashboard:true,manager:true,reports:true,
                                         commercialText:'Agenda comercial de todo el equipo. Puede ver y editar.'};
-    if(c==='yoselin')           return {commercial:true,calls:true,myReport:true,gups:true,dashboard:true,
+    if(c==='yoselin')           return {commercial:true,myReport:true,gups:true,dashboard:true,
                                         commercialText:'Agenda comercial de todo el equipo. Puede ver y editar.'};
     if(c==='jennifer')          return {commercial:true,gups:true,commercialText:'Su agenda y la de Eric Guzmán. Puede ver y editar.'};
     if(c==='eric')              return {commercial:true,myReport:true,gups:true,commercialTitle:'Mi agenda',commercialText:'Su agenda y la de Jennifer Pineda. Puede ver y editar.'};
     if(c==='hector')            return {commercial:true,myReport:true,gups:true,commercialTitle:'Mi agenda',commercialText:'Sus actividades y las notas que le dejen.'};
-    if(r==='reception_staff')   return {commercial:true,reception:true,calls:true,commercialText:'Consulta la agenda de todo el equipo. Edita solo la suya.'};
+    if(r==='reception_staff')   return {commercial:true,reception:true,commercialText:'Consulta la agenda de todo el equipo. Edita solo la suya.'};
     if(r==='seller'&&c)         return {commercial:true,gups:true,commercialTitle:'Mi agenda'};
     return null;
   }
@@ -232,7 +227,6 @@
     toggle('receptionOption',a.reception);
     toggle('gupsOption',a.gups);
     toggle('dashboardOption',a.dashboard);
-    toggle('callsOption',a.calls);
     toggle('weeklyReportAdminOption',a.reports);
     toggle('weeklyReportSellerOption',a.myReport);
     document.getElementById('weeklyReportAdmin')?.classList.add('hidden');
