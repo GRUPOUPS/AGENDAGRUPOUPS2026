@@ -53,6 +53,8 @@ h2{margin:0;font-size:21px;font-weight:800}
 .mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .mini div{background:var(--bg);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:1px}
 .mini b{font-size:21px}.mini span{font-size:12px;font-weight:600;color:var(--soft)}
+.late{font-size:12px;font-weight:700;line-height:1.35;padding:7px 10px;border-radius:10px}
+.late.b-bad{background:#fff0ee;color:#b42318}.late.b-warn{background:#fff5d8;color:#7a5000}
 .cta{display:flex;align-items:center;justify-content:center;min-height:38px;border-radius:10px;background:#e8f0fb;font-weight:700;font-size:14px;color:var(--navy)}
 .legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--soft)}
 .legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -268,10 +270,14 @@ table.d.compact{min-width:900px}
   function statusOf(code) {
     const p = byCode.get(code); if (!p) return ['Al día', 'b-ok'];
     const mine = backlog.filter(r => r.owner_id === p.id);
-    if (!mine.length) return ['Al día', 'b-ok'];
+    if (!mine.length) return ['Al día', 'b-ok', ''];
     /* Más de 1 semana sin resultado: rojo. Hasta 1 semana: amarillo. */
     const limit = new Date(G.parseISO(date)); limit.setDate(limit.getDate() - 7);
-    return mine.some(r => G.parseISO(r.agenda_date) < limit) ? ['Atención', 'b-bad'] : ['Revisar', 'b-warn'];
+    const oldest = mine.map(r => r.agenda_date).sort()[0];
+    const d = G.parseISO(oldest);
+    const since = `${d.getDate()} de ${new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(d)}`;
+    const note = `${mine.length} ${mine.length === 1 ? 'actividad anterior' : 'actividades anteriores'} sin resultado · la más antigua del ${since}`;
+    return mine.some(r => G.parseISO(r.agenda_date) < limit) ? ['Atención', 'b-bad', note] : ['Revisar', 'b-warn', note];
   }
 
   function renderCards() {
@@ -280,11 +286,12 @@ table.d.compact{min-width:900px}
       const done = rows.filter(r => r.status === 'completed').length;
       const pend = rows.filter(r => (r.status || 'pending') === 'pending').length;
       const fol = rows.filter(r => r.followup_attended_at).length;
-      const [stx, scl] = statusOf(p.code);
+      const [stx, scl, snote] = statusOf(p.code);
       const on = selected === p.code;
       return `<button type="button" class="pcard${on ? ' on' : ''}" data-person="${p.code}" aria-pressed="${on}">
         <span class="pc-top"><span class="avatar">${p.initials}</span><span style="flex:1;min-width:0"><span class="pc-name">${esc(p.name)}</span><br><span class="pc-role">${esc(p.role)}</span></span><span class="badge ${scl}"><i></i>${stx}</span></span>
         <span class="mini"><div><b>${rows.length}</b><span>Actividades</span></div><div><b>${done}</b><span>Con resultado</span></div><div><b>${pend}</b><span>Pendientes</span></div><div><b>${fol}</b><span>Seguimientos atendidos</span></div></span>
+        ${snote ? `<span class="late ${scl}">${esc(snote)}</span>` : ''}
         <span class="cta">${on ? 'Mostrando su agenda ↓' : (date === todayIso() ? 'Ver agenda de hoy' : 'Ver agenda de este día')}</span>
       </button>`;
     }).join('');
