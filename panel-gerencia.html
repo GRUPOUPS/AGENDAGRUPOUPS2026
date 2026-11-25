@@ -319,7 +319,7 @@ table.d.compact{min-width:900px}
         <span class="cta">${on ? 'Mostrando su agenda ↓' : (date === todayIso() ? 'Ver agenda de hoy' : 'Ver agenda de este día')}</span>
       </button>
         ${procNote ? `<button type="button" class="late b-proc" data-list="proc" data-code="${p.code}">${esc(procNote)}<span class="late-go">Ver cuáles →</span></button>` : ''}
-        ${snote ? `<button type="button" class="late ${scl}" data-list="late" data-code="${p.code}">${esc(snote)}<span class="late-go">Ver cuáles →</span></button>` : ''}
+        ${snote ? `<span class="late ${scl}">${esc(snote)}</span>` : ''}
       </div>`;
     }).join('');
     $('cards').querySelectorAll('[data-list]').forEach(b => b.addEventListener('click', () => openList(b.dataset.code, b.dataset.list)));
