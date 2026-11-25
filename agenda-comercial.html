@@ -695,9 +695,10 @@ Ver semana del asesor</button>
       supabaseClient.from('commercial_calendar')
         .select('*')
         .lt('agenda_date',currentDate)
+        .gte('agenda_date',(()=>{const d=parseLocalDate(currentDate);d.setDate(d.getDate()-60);return localDateISO(d)})())
         .order('agenda_date',{ascending:false})
         .order('start_time',{ascending:true})
-        .limit(300)
+        .limit(2000)
     ]);
 
     if(error){setSync('Error al cargar.','error');throw error}
@@ -1164,7 +1165,7 @@ Ver semana del asesor</button>
     const mine=profileCode();
     const p=PEOPLE.find(x=>x.id===selectedPerson);
     const name=p?p.name:selectedPerson;
-    if(mine&&selectedPerson===mine){box.innerHTML='<div class="owner-banner mine">✔ Está en <strong>su propia agenda</strong>.</div>';return}
+    if(mine&&selectedPerson===mine){box.innerHTML='<div class="owner-banner mine"><span>✔ Está en <strong>su propia agenda</strong>.</span></div>';return}
     const canGoMine=mine&&people.some(x=>x.id===mine);
     if(canEditPerson(selectedPerson)){
       box.innerHTML=`<div class="owner-banner other" role="alert"><span>✏️ <strong>Está editando la agenda de ${escapeHtml(name)}</strong>, no la suya. Revise antes de agregar o cambiar actividades.</span>${canGoMine?'<button type="button" id="goMyAgenda">Ir a mi agenda</button>':''}</div>`;
