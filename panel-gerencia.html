@@ -53,6 +53,22 @@ h2{margin:0;font-size:21px;font-weight:800}
 .mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .mini div{background:var(--bg);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:1px}
 .mini b{font-size:21px}.mini span{font-size:12px;font-weight:600;color:var(--soft)}
+.pcell{display:flex;flex-direction:column;gap:6px}
+.pcell .pcard{flex:1}
+button.late{border:0;text-align:left;cursor:pointer;font:700 12px Inter,Segoe UI,Arial,sans-serif;display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;align-items:center}
+button.late:hover{filter:brightness(.97);text-decoration:underline}
+.late-go{white-space:nowrap;font-weight:800}
+.lst-back{position:fixed;inset:0;z-index:3000;background:rgba(10,28,52,.55);display:flex;align-items:center;justify-content:center;padding:18px}
+.lst{width:100%;max-width:760px;max-height:86vh;overflow:auto;background:#fff;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.lst-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.lst-head h3{margin:0;font-size:20px;color:var(--navy)}
+.lst-item{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.lst-item.proc{box-shadow:inset 4px 0 0 #0b4da2;background:#f8fbff}
+.lst-item.bad{box-shadow:inset 4px 0 0 #b42318}
+.lst-item.warn{box-shadow:inset 4px 0 0 #c98a00}
+.lst-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--soft)}
+.lst-up{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.45}
+.lst-up small{display:block;color:var(--muted);font-size:11px}
 .late{font-size:12px;font-weight:700;line-height:1.35;padding:7px 10px;border-radius:10px}
 .late.b-proc{background:#eef4fd;color:#0b3a73}
 .late.b-bad{background:#fff0ee;color:#b42318}.late.b-warn{background:#fff5d8;color:#7a5000}
@@ -297,15 +313,67 @@ table.d.compact{min-width:900px}
       const nextProc = procs.map(r => r.next_followup_date).sort()[0];
       const procNote = procs.length ? `🔁 ${procs.length} ${procs.length === 1 ? 'actividad en proceso' : 'actividades en proceso'} · próximo seguimiento: ${G.parseISO(nextProc).getDate()} de ${new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(G.parseISO(nextProc))}` : '';
       const on = selected === p.code;
-      return `<button type="button" class="pcard${on ? ' on' : ''}" data-person="${p.code}" aria-pressed="${on}">
+      return `<div class="pcell"><button type="button" class="pcard${on ? ' on' : ''}" data-person="${p.code}" aria-pressed="${on}">
         <span class="pc-top"><span class="avatar">${p.initials}</span><span style="flex:1;min-width:0"><span class="pc-name">${esc(p.name)}</span><br><span class="pc-role">${esc(p.role)}</span></span><span class="badge ${scl}"><i></i>${stx}</span></span>
         <span class="mini"><div><b>${rows.length}</b><span>Actividades</span></div><div><b>${done}</b><span>Con resultado</span></div><div><b>${pend}</b><span>Pendientes</span></div><div><b>${fol}</b><span>Seguimientos atendidos</span></div></span>
-        ${procNote ? `<span class="late b-proc">${esc(procNote)}</span>` : ''}
-        ${snote ? `<span class="late ${scl}">${esc(snote)}</span>` : ''}
         <span class="cta">${on ? 'Mostrando su agenda ↓' : (date === todayIso() ? 'Ver agenda de hoy' : 'Ver agenda de este día')}</span>
-      </button>`;
+      </button>
+        ${procNote ? `<button type="button" class="late b-proc" data-list="proc" data-code="${p.code}">${esc(procNote)}<span class="late-go">Ver cuáles →</span></button>` : ''}
+        ${snote ? `<button type="button" class="late ${scl}" data-list="late" data-code="${p.code}">${esc(snote)}<span class="late-go">Ver cuáles →</span></button>` : ''}
+      </div>`;
     }).join('');
+    $('cards').querySelectorAll('[data-list]').forEach(b => b.addEventListener('click', () => openList(b.dataset.code, b.dataset.list)));
     $('cards').querySelectorAll('[data-person]').forEach(b => b.addEventListener('click', () => { selected = selected === b.dataset.person ? null : b.dataset.person; renderSection1(); goToDetail(); }));
+  }
+
+  /* Lista de actividades «en proceso» o atrasadas de una persona (al tocar la franja). */
+  function openList(code, kind) {
+    const p = PEOPLE.find(x => x.code === code), prof = byCode.get(code);
+    if (!p || !prof) return;
+    const src = kind === 'proc' ? inProcess : backlog;
+    const items = src.filter(r => r.owner_id === prof.id).sort((a, b) => kind === 'proc'
+      ? String(a.next_followup_date).localeCompare(String(b.next_followup_date))
+      : String(a.agenda_date).localeCompare(String(b.agenda_date)));
+    const dm = iso => { const d = G.parseISO(iso); return `${d.getDate()} de ${new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(d)}`; };
+    const limit = new Date(G.parseISO(date)); limit.setDate(limit.getDate() - 7);
+    const back = document.createElement('div');
+    back.className = 'lst-back';
+    back.innerHTML = `<div class="lst" role="dialog" aria-modal="true" aria-labelledby="lstTitle">
+      <div class="lst-head"><div><h3 id="lstTitle">${kind === 'proc' ? '🔁 Actividades en proceso' : 'Actividades anteriores sin resultado'}</h3>
+      <span class="hint">${esc(p.name)} · ${items.length} ${items.length === 1 ? 'actividad' : 'actividades'}</span></div>
+      <button class="btn" type="button" data-close>Cerrar</button></div>
+      ${items.map(r => {
+        const ups = Array.isArray(r.followup_updates) ? r.followup_updates : [];
+        const last = ups[ups.length - 1];
+        const cls = kind === 'proc' ? 'proc' : (G.parseISO(r.agenda_date) < limit ? 'bad' : 'warn');
+        return `<div class="lst-item ${cls}">
+          <div class="lst-meta"><span>${esc(G.longDate(r.agenda_date))} · ${esc(G.ampm(r.start_time))}${r.end_time ? ' – ' + esc(G.ampm(r.end_time)) : ''}</span>
+          ${kind === 'proc' ? `<span class="st" style="background:#e6f0fd;color:#0b3a73">Próximo seguimiento: ${esc(dm(r.next_followup_date))}</span>`
+            : (r.next_followup_date ? `<span class="st st-p">Seguimiento vencido el ${esc(dm(r.next_followup_date))}</span>` : `<span class="st ${cls === 'bad' ? 'st-x' : 'st-p'}">Sin resultado</span>`)}</div>
+          <b>${esc(r.company_contact || 'Sin empresa / contacto')}</b>
+          <span>${esc(r.activity || 'Sin actividad indicada')}</span>
+          ${last ? `<div class="lst-up"><small>Último avance · ${esc(last.by || '')}${last.at ? ', ' + esc(dm(String(last.at).slice(0, 10))) : ''}</small>${esc(last.text || '')}${ups.length > 1 ? `<small>Se ha marcado en proceso ${ups.length} veces</small>` : ''}</div>` : ''}
+          <div class="gn-row"><button type="button" class="ev-open" data-open-day="${esc(r.id)}">Ver en agenda diaria</button><button type="button" class="ev-add" data-gn-add="${esc(r.id)}">+ Nota</button></div>
+        </div>`;
+      }).join('') || '<div class="empty">No hay actividades.</div>'}
+    </div>`;
+    document.body.appendChild(back);
+    const close = () => back.remove();
+    back.querySelector('[data-close]').addEventListener('click', close);
+    back.addEventListener('click', e => { if (e.target === back) close(); });
+    const byIdRow = id => items.find(x => x.id === id);
+    back.querySelectorAll('[data-gn-add]').forEach(b => b.addEventListener('click', () => { const r = byIdRow(b.dataset.gnAdd); if (r) { close(); G.notes.openComposer(act(r), refreshNotes); } }));
+    back.querySelectorAll('[data-open-day]').forEach(b => b.addEventListener('click', async () => {
+      const r = byIdRow(b.dataset.openDay); if (!r) return;
+      close();
+      selected = code;
+      date = r.agenda_date; weekAnchor = r.agenda_date;
+      await loadData(); renderSection1(); renderWeek();
+      setTimeout(() => {
+        const tr = document.querySelector(`#detail tr[data-row-id="${CSS.escape(r.id)}"]`);
+        if (tr) { tr.classList.add('gn-focus-row'); tr.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => tr.classList.remove('gn-focus-row'), 3000); }
+      }, 200);
+    }));
   }
 
   function rowsTable(rows) {
