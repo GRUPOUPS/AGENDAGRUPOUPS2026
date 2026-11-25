@@ -312,6 +312,8 @@ table.d.compact{min-width:900px}
       const procs = inProcess.filter(r => r.owner_id === byCode.get(p.code)?.id);
       const nextProc = procs.map(r => r.next_followup_date).sort()[0];
       const procNote = procs.length ? `🔁 ${procs.length} ${procs.length === 1 ? 'actividad en proceso' : 'actividades en proceso'} · próximo seguimiento: ${G.parseISO(nextProc).getDate()} de ${new Intl.DateTimeFormat('es-PA', { month: 'long' }).format(G.parseISO(nextProc))}` : '';
+      const wd = new Date().getDay();
+      const noAgenda = date === todayIso() && wd !== 0 && wd !== 6 && !rows.length;
       const on = selected === p.code;
       return `<div class="pcell"><button type="button" class="pcard${on ? ' on' : ''}" data-person="${p.code}" aria-pressed="${on}">
         <span class="pc-top"><span class="avatar">${p.initials}</span><span style="flex:1;min-width:0"><span class="pc-name">${esc(p.name)}</span><br><span class="pc-role">${esc(p.role)}</span></span><span class="badge ${scl}"><i></i>${stx}</span></span>
@@ -319,6 +321,7 @@ table.d.compact{min-width:900px}
         <span class="cta">${on ? 'Mostrando su agenda ↓' : (date === todayIso() ? 'Ver agenda de hoy' : 'Ver agenda de este día')}</span>
       </button>
         ${procNote ? `<button type="button" class="late b-proc" data-list="proc" data-code="${p.code}">${esc(procNote)}<span class="late-go">Ver cuáles →</span></button>` : ''}
+        ${noAgenda ? `<span class="late b-warn">📭 Sin agenda registrada hoy</span>` : ''}
         ${snote ? `<span class="late ${scl}">${esc(snote)}</span>` : ''}
       </div>`;
     }).join('');

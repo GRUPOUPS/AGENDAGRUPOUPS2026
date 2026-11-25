@@ -288,6 +288,7 @@ textarea{min-height:47px;resize:vertical}
 .owner-banner.other{background:#fff1e6;border:2px solid #e8772e;color:#5a2a06}
 .owner-banner.view{background:#eef4fd;border:1px solid #c9d8ea;color:#0b3a73}
 .owner-banner.mine{background:#eaf8ef;border:1px solid #b7e3c6;color:#14532d;font-size:14px;padding:9px 14px}
+.owner-banner.empty-today{background:#fff7d6;border:2px solid #e0b300;color:#5c4400}
 .owner-banner button{border:0;border-radius:10px;background:#e8772e;color:#fff;font:800 13px Inter,Segoe UI,Arial,sans-serif;padding:9px 14px;cursor:pointer}
 .activity-transfer-btn{border:1px solid #f3c9a8;background:#fff;color:#a4470f;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:850;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .tr-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #d8e2f0;border-radius:12px;cursor:pointer;font-size:14px}
@@ -1184,7 +1185,13 @@ Ver semana del asesor</button>
     const mine=profileCode();
     const p=PEOPLE.find(x=>x.id===selectedPerson);
     const name=p?p.name:selectedPerson;
-    if(mine&&selectedPerson===mine){box.innerHTML='<div class="owner-banner mine"><span>✔ Está en <strong>su propia agenda</strong>.</span></div>';return}
+    if(mine&&selectedPerson===mine){
+      const now=new Date(),wd=now.getDay();
+      const empty=currentDate===localDateISO(now)&&wd!==0&&wd!==6&&!getRows(mine).some(r=>String(r.companyContact||'').trim()||String(r.activity||'').trim());
+      box.innerHTML=empty
+        ?'<div class="owner-banner empty-today" role="status"><span>⚠️ <strong>Todavía no ha registrado su agenda de hoy.</strong> Presione “Agregar actividad” para anotar lo que hará hoy.</span></div>'
+        :'<div class="owner-banner mine"><span>✔ Está en <strong>su propia agenda</strong>.</span></div>';
+      return}
     const canGoMine=mine&&people.some(x=>x.id===mine);
     if(canEditPerson(selectedPerson)){
       box.innerHTML=`<div class="owner-banner other" role="alert"><span>✏️ <strong>Está editando la agenda de ${escapeHtml(name)}</strong>, no la suya. Revise antes de agregar o cambiar actividades.</span>${canGoMine?'<button type="button" id="goMyAgenda">Ir a mi agenda</button>':''}</div>`;
@@ -1712,7 +1719,7 @@ Ver semana del asesor</button>
   }
   function renderCountsOnly(){renderPeople();if(selectedPerson)document.getElementById('personStats').innerHTML=statsHtml(countFor(selectedPerson))}
   function rowPayload(row,personId,date=currentDate){const profile=personProfile(personId);const hasResult=!!String(row.result||'').trim();let status=row.status||'pending';if(status!=='cancelled')status=hasResult?'completed':'pending';row.status=status;return{owner_id:profile.id,agenda_date:date,start_time:row.start||null,end_time:row.end||null,company_contact:row.companyContact||'',activity:row.activity||'',result:row.result||'',location_preset:row.locationPreset||'Oficina Santa María',location_custom:row.locationCustom||'',status,followup_attended_at:row.followupAttendedAt||null}}
-  function scheduleSave(row){if(!canEditSelectedCalendar())return;const personId=selectedPerson;const date=currentDate;clearTimeout(saveTimers.get(row.id));setSync('Guardando cambios...','saving');const timer=setTimeout(()=>saveRow(row,personId,date),600);saveTimers.set(row.id,timer)}
+  function scheduleSave(row){if(!canEditSelectedCalendar())return;renderOwnerBanner();const personId=selectedPerson;const date=currentDate;clearTimeout(saveTimers.get(row.id));setSync('Guardando cambios...','saving');const timer=setTimeout(()=>saveRow(row,personId,date),600);saveTimers.set(row.id,timer)}
   async function saveRow(row,personId,date){const payload=rowPayload(row,personId,date);const {error}=await supabaseClient.from('commercial_calendar').update(payload).eq('id',row.id);if(error){console.error(error);setSync('No se pudo guardar.','error');showToast('No se pudo guardar el cambio.');return}suppressRealtimeUntil=Date.now()+1200;setSync('Todos los cambios están sincronizados.','synced')}
   async function addActivity(){
     if(!canEditSelectedCalendar()){showToast('No tiene permiso para editar esta agenda.');return}
