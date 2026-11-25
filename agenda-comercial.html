@@ -162,6 +162,12 @@ textarea{min-height:47px;resize:vertical}
 .followup-title{font-weight:850;color:var(--blue-950);font-size:13px}
 .followup-sub{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
 .followup-result{display:grid;gap:7px}
+.followup-item.inproc{background:#f3f8ff;box-shadow:inset 4px 0 0 #0b4da2}
+.badge.inproc{background:#e6f0fd;color:#0b3a73;border:1px solid #b9d2f3}
+.badge.overdue{background:#fff5d8;color:#7a5000;border:1px solid #f3dc9b}
+.followup-progress{border:1px solid #b9d2f3;background:#fff;color:#0b4da2;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:850;cursor:pointer}
+.followup-update{margin-top:6px;background:#fff;border:1px solid #d8e2f0;border-radius:8px;padding:7px 9px;font-size:12px;line-height:1.45;color:#26324a}
+.followup-update small{display:block;color:#667085;font-size:11px}
 .followup-result textarea{min-height:54px;background:#fff;padding:9px 10px}
 .followup-save{justify-content:center;width:max-content;padding:8px 11px;font-size:12px}
 @media(max-width:1000px){.followup-item{grid-template-columns:1fr 1fr}.followup-result{grid-column:1/-1}}
@@ -746,6 +752,8 @@ Ver semana del asesor</button>
         locationPreset:row.location_preset||'Oficina Santa María',
         locationCustom:row.location_custom||'',
         status:'pending',
+        nextFollowupDate:row.next_followup_date||null,
+        followupUpdates:Array.isArray(row.followup_updates)?row.followup_updates:[],
         assistantAudioPath:row.assistant_audio_path||'',
         assistantRequestStatus:row.assistant_request_status||'',
         assistantRequestedAt:row.assistant_requested_at||null,
@@ -956,20 +964,29 @@ Ver semana del asesor</button>
     if(!items.length)return'';
 
     const editable=canEditPerson(personId);
+    const today=localDateISO(new Date());
+    const inProc=r=>!!r.nextFollowupDate&&r.nextFollowupDate>=today;
+    const nProc=items.filter(inProc).length, nPend=items.length-nProc;
+    const shortDate=iso=>{const d=parseLocalDate(iso);return `${d.getDate()} de ${new Intl.DateTimeFormat('es-PA',{month:'long'}).format(d)}`};
+    const badgeFor=r=>inProc(r)
+      ?`<span class="badge inproc">🔁 En proceso · próximo seguimiento: ${escapeHtml(shortDate(r.nextFollowupDate))}</span>`
+      :(r.nextFollowupDate?`<span class="badge overdue">Seguimiento vencido el ${escapeHtml(shortDate(r.nextFollowupDate))}</span>`:`<span class="badge pending">Pendiente de seguimiento</span>`);
+    const lastUpdate=r=>{const u=(r.followupUpdates||[]);if(!u.length)return'';const x=u[u.length-1];
+      return `<div class="followup-update"><small>Último avance · ${escapeHtml(x.by||'')}, ${escapeHtml(x.at?shortDate(String(x.at).slice(0,10)):'')}</small>${escapeHtml(x.text||'')}${u.length>1?`<small>Se ha marcado en proceso ${u.length} veces</small>`:''}</div>`};
 
     return `<section class="followup-box">
       <div class="followup-box-head">
         <div>
-          <h4>⚠ Tienes actividades pendientes sin resultado</h4>
-          <p>${items.length===1?'Tienes 1 actividad pendiente.':'Tienes '+items.length+' actividades pendientes.'} Puedes mostrarlas u ocultarlas cuando quieras.</p>
+          <h4>${nPend?'⚠ Tienes actividades pendientes sin resultado':'🔁 Tienes actividades en proceso'}</h4>
+          <p>${nPend?(nPend===1?'Tienes 1 actividad pendiente':'Tienes '+nPend+' actividades pendientes'):''}${nPend&&nProc?' y ':''}${nProc?(nProc===1?(nPend?'1 en proceso':'Tienes 1 actividad en proceso'):(nPend?nProc+' en proceso':'Tienes '+nProc+' actividades en proceso')):''}. Puedes mostrarlas u ocultarlas cuando quieras.</p>
         </div>
         <div class="followup-toolbar">
-          <span class="followup-count">${items.length} ${items.length===1?'pendiente':'pendientes'}</span>
+          <span class="followup-count">${nPend?`${nPend} ${nPend===1?'pendiente':'pendientes'}`:''}${nPend&&nProc?' · ':''}${nProc?`${nProc} en proceso`:''}</span>
           <button class="followup-toggle" type="button" data-followup-toggle>Mostrar actividades pendientes</button>
         </div>
       </div>
       <div class="followup-list" data-followup-list>
-        ${items.map((r,i)=>`<div class="followup-item" data-followup-index="${i}" data-followup-row-id="${escapeAttr(r.id||'')}">
+        ${items.map((r,i)=>`<div class="followup-item${inProc(r)?' inproc':''}" data-followup-index="${i}" data-followup-row-id="${escapeAttr(r.id||'')}">
           <div class="followup-open" data-followup-open="${i}" title="Ir directamente a esta actividad">
             <div class="followup-date">${capitalize(formatDate(r.agendaDate))}</div>
             <div class="followup-sub">${escapeHtml(r.start||'--:--')} – ${escapeHtml(r.end||'--:--')}</div>
@@ -980,7 +997,8 @@ Ver semana del asesor</button>
           </div>
           <div class="followup-open" data-followup-open="${i}" title="Ir directamente a esta actividad">
             <div class="followup-title">${escapeHtml(r.activity||'Sin actividad indicada')}</div>
-            <div class="followup-sub"><span class="badge pending">Pendiente de seguimiento</span></div>
+            <div class="followup-sub">${badgeFor(r)}</div>
+            ${lastUpdate(r)}
             <div class="followup-open-hint">↗ Toca aquí para ir a la actividad</div>
           </div>
           <div class="followup-result">
@@ -989,6 +1007,7 @@ Ver semana del asesor</button>
                  <div class="followup-preview-note hidden" data-followup-preview-note>Vista previa del resultado de cancelación. Puede editar el texto antes de confirmarlo.</div>
                  <div class="followup-result-actions">
                    <button class="btn primary followup-save" type="button" data-followup-save="${i}">Guardar resultado</button>
+                   <button class="followup-progress" type="button" data-followup-progress="${i}">🔁 Sigue en proceso</button>
                    <button class="followup-cancel" type="button" data-followup-cancel="${i}">Cancelar / posponer</button>
                    <button class="followup-cancel-back hidden" type="button" data-followup-cancel-back="${i}">Volver</button>
                  </div>`
@@ -1190,6 +1209,7 @@ Ver semana del asesor</button>
       wrap.innerHTML=search+followups+`<div class="empty"><div class="empty-icon">${icon('calendar')}</div><strong>No hay actividades para este día.</strong><div style="margin-top:7px">${canEditSelectedCalendar()?'Presione “Agregar actividad” para comenzar.':'No hay información registrada para esta fecha.'}</div></div>`;
       bindAdvisorSearch();
       bindFollowups();
+      bindProgress();
       return;
     }
 
@@ -1211,6 +1231,7 @@ Ver semana del asesor</button>
 
     bindAdvisorSearch();
     bindFollowups();
+    bindProgress();
     bindRows();
     decorateNotes();
   }
@@ -1814,6 +1835,51 @@ Ver semana del asesor</button>
     renderAll();
     showToast(`Actividad movida al ${formatDate(newDate)}.`);
     return true;
+  }
+
+  /* ===== «Sigue en proceso»: el asesor reporta avance y fecha del próximo seguimiento ===== */
+  function bindProgress(){
+    document.querySelectorAll('[data-followup-progress]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();openProgressDialog(Number(btn.dataset.followupProgress))}));
+  }
+  function openProgressDialog(index){
+    if(!canEditPerson(selectedPerson))return;
+    const item=getFollowups(selectedPerson)[index];if(!item)return;
+    if(window.GUPS)window.GUPS.injectCss();
+    const today=new Date();
+    const addDays=n=>{const d=new Date(today);d.setDate(d.getDate()+n);return localDateISO(d)};
+    const back=document.createElement('div');
+    back.className='gn-modal-back';
+    back.innerHTML=`<div class="gn-modal" role="dialog" aria-modal="true" aria-labelledby="pgTitle">
+      <h3 id="pgTitle">🔁 Sigue en proceso</h3>
+      <div style="font-size:14px;color:#475467;line-height:1.45"><strong>${escapeHtml(item.companyContact||'Sin empresa / contacto')}</strong> – ${escapeHtml(item.activity||'Sin actividad')}<br>Actividad del ${escapeHtml(formatDate(item.agendaDate))}</div>
+      <label for="pgText" style="font-size:13px;font-weight:700">¿Cuál es el avance?</label>
+      <textarea id="pgText" rows="3" placeholder="Ej.: Cliente revisando la cotización, espera aprobación de su gerencia."></textarea>
+      <label for="pgDate" style="font-size:13px;font-weight:700">¿Cuándo le dará el próximo seguimiento?</label>
+      <input id="pgDate" type="date" value="${addDays(7)}" min="${addDays(1)}" max="${addDays(30)}" style="height:46px;padding:0 12px;border:1px solid #c9d8ea;border-radius:10px;font:600 15px Inter,Segoe UI,Arial,sans-serif">
+      <span class="gn-hint">Puede elegir hasta 30 días. Si llega esa fecha sin resultado, la actividad vuelve a contar como pendiente.</span>
+      <span class="gn-err" id="pgErr"></span>
+      <div class="gn-row" style="justify-content:flex-end"><button type="button" class="gn-btn ghost" id="pgCancel">Cancelar</button><button type="button" class="gn-btn" id="pgOk">Guardar avance</button></div>
+    </div>`;
+    document.body.appendChild(back);
+    const close=()=>back.remove();
+    back.querySelector('#pgText').focus();
+    back.querySelector('#pgCancel').addEventListener('click',close);
+    back.addEventListener('click',e=>{if(e.target===back)close()});
+    back.querySelector('#pgOk').addEventListener('click',async()=>{
+      const text=back.querySelector('#pgText').value.trim();
+      const until=back.querySelector('#pgDate').value;
+      const err=back.querySelector('#pgErr');
+      if(!text){err.textContent='Escriba el avance antes de guardar.';return}
+      if(!until||until<addDays(1)||until>addDays(30)){err.textContent='Elija una fecha entre mañana y los próximos 30 días.';return}
+      const ok=back.querySelector('#pgOk');ok.disabled=true;ok.textContent='Guardando…';
+      const updates=[...(item.followupUpdates||[]),{at:new Date().toISOString(),by:currentProfile?.full_name||'',text,until}];
+      const {error}=await supabaseClient.from('commercial_calendar').update({next_followup_date:until,followup_updates:updates}).eq('id',item.id);
+      if(error){console.error(error);ok.disabled=false;ok.textContent='Guardar avance';err.textContent='No se pudo guardar. Intente de nuevo.';return}
+      item.nextFollowupDate=until;item.followupUpdates=updates;
+      suppressRealtimeUntil=Date.now()+1200;
+      close();renderAll();
+      showToast(`Avance guardado. Próximo seguimiento: ${formatDate(until)}.`);
+    });
   }
 
   /* ===== Pasar una actividad a la agenda de otra persona ===== */
