@@ -443,7 +443,7 @@ if(saveWeeklyReportBtn){
         'send-agenda-email',
         {
           body:{
-            to:sellerInfo.email,
+            to:[sellerInfo.email,'info@grupoups.com'],  /* copia a Yorlenis */
             subject:'Informe semanal disponible | Grupo UPS',
             html:`
               <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#202534;">
@@ -481,7 +481,7 @@ if(saveWeeklyReportBtn){
       }
 
       document.getElementById('weeklyReportFile').value='';
-      msg.textContent=`Informe subido y enviado a ${sellerInfo.name}.`;
+      msg.textContent=`Informe subido y enviado a ${sellerInfo.name} (con copia a info@grupoups.com).`;
       saveWeeklyReportBtn.classList.add('hidden');
 
 
